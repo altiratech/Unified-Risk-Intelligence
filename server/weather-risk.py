@@ -39,8 +39,8 @@ class RiskAssessment:
 class WeatherRiskCalculator:
     """Main class for weather risk calculations"""
     
-    def __init__(self, api_key: str = "demo_key"):
-        self.api_key = api_key or os.getenv('TOMORROW_IO_API_KEY') or "demo_key"
+    def __init__(self, api_key: str = None):
+        self.api_key = api_key or os.getenv('TOMORROW_IO_API_KEY')
         if not self.api_key:
             raise ValueError("Tomorrow.io API key is required. Set TOMORROW_IO_API_KEY environment variable.")
         
