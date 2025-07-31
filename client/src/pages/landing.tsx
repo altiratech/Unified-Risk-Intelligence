@@ -13,7 +13,7 @@ export default function Landing() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Shield className="text-white text-sm" />
               </div>
-              <h1 className="text-xl font-semibold text-slate-900">RiskIQ Platform</h1>
+              <h1 className="text-xl text-slate-900 font-semibold">ALTIRA TECHNOLOGIES</h1>
             </div>
             <Button onClick={() => window.location.href = "/api/login"}>
               Sign In
@@ -21,7 +21,6 @@ export default function Landing() {
           </div>
         </div>
       </header>
-
       {/* Hero Section */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
@@ -41,7 +40,6 @@ export default function Landing() {
           </Button>
         </div>
       </section>
-
       {/* Features Grid */}
       <section className="py-16 px-6 bg-white">
         <div className="max-w-6xl mx-auto">
@@ -130,7 +128,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* Use Cases */}
       <section className="py-16 px-6">
         <div className="max-w-4xl mx-auto">
@@ -171,7 +168,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
       {/* CTA Section */}
       <section className="py-16 px-6 bg-slate-900 text-white">
         <div className="max-w-4xl mx-auto text-center">
