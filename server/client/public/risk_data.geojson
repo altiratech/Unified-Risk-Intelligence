@@ -1,0 +1,120 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.2437,
+          34.0522
+        ]
+      },
+      "properties": {
+        "name": "Los Angeles Office Complex",
+        "asset_type": "commercial",
+        "insured_value": 5000000.0,
+        "fire_index": 0.0,
+        "wind_speed": 1.8,
+        "temperature": 28.8,
+        "humidity": 49,
+        "precipitation": 0.0,
+        "risk_score": 0.0,
+        "risk_level": "low"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.4194,
+          37.7749
+        ]
+      },
+      "properties": {
+        "name": "San Francisco Data Center",
+        "asset_type": "critical_infrastructure",
+        "insured_value": 10000000.0,
+        "fire_index": 0.0,
+        "wind_speed": 4.6,
+        "temperature": 18.5,
+        "humidity": 75,
+        "precipitation": 0.0,
+        "risk_score": 0.0,
+        "risk_level": "low"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1398,
+          36.1699
+        ]
+      },
+      "properties": {
+        "name": "Las Vegas Casino Resort",
+        "asset_type": "hospitality",
+        "insured_value": 15000000.0,
+        "fire_index": 0.0,
+        "wind_speed": 6.2,
+        "temperature": 39.3,
+        "humidity": 7,
+        "precipitation": 0.0,
+        "risk_score": 0.0,
+        "risk_level": "low"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -112.074,
+          33.4484
+        ]
+      },
+      "properties": {
+        "name": "Phoenix Manufacturing Plant",
+        "asset_type": "industrial",
+        "insured_value": 8000000.0,
+        "fire_index": 1.0,
+        "wind_speed": 5.0,
+        "temperature": 20.0,
+        "humidity": 50.0,
+        "precipitation": 0.0,
+        "risk_score": 0.65,
+        "risk_level": "low"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.4944,
+          38.5816
+        ]
+      },
+      "properties": {
+        "name": "Sacramento Distribution Center",
+        "asset_type": "logistics",
+        "insured_value": 3000000.0,
+        "fire_index": 0.0,
+        "wind_speed": 1.9,
+        "temperature": 31.8,
+        "humidity": 34,
+        "precipitation": 0.0,
+        "risk_score": 0.0,
+        "risk_level": "low"
+      }
+    }
+  ],
+  "metadata": {
+    "generated_at": "2025-01-31T20:42:00Z",
+    "total_assets": 5,
+    "data_source": "Tomorrow.io Weather API"
+  }
+}
