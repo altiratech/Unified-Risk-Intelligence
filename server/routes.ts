@@ -7,6 +7,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { insertDataSourceSchema, insertDataMappingSchema, insertRiskExposureSchema, insertExportJobSchema } from "@shared/schema";
+import { riskAnalyticsEngine } from "./risk-analytics";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -271,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Risk metrics route
+  // Risk metrics route - Basic metrics for dashboard
   app.get('/api/risk-metrics', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -285,6 +286,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching risk metrics:", error);
       res.status(500).json({ message: "Failed to fetch risk metrics" });
+    }
+  });
+
+  // Enhanced Portfolio Analytics route - Industry-standard calculations
+  app.get('/api/portfolio-analytics', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+      
+      console.log('Calculating enhanced portfolio analytics for organization:', user.organizationId);
+      const analytics = await riskAnalyticsEngine.calculatePortfolioAnalytics(user.organizationId);
+      
+      res.json({
+        success: true,
+        data: analytics,
+        calculatedAt: new Date().toISOString(),
+        organizationId: user.organizationId
+      });
+    } catch (error) {
+      console.error("Error calculating portfolio analytics:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to calculate portfolio analytics",
+        error: error.message 
+      });
     }
   });
 
