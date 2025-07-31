@@ -1,0 +1,37 @@
+Problem
+
+Insurance carriers and reinsurers rely on dozens of fragmented data sources to assess and price risk — from climate and catastrophe models to policy, claims, geospatial, and third-party data feeds. These sources often live in disconnected silos across legacy systems, spreadsheets, and vendor portals. This fragmentation leads to:
+	•	Delayed or incomplete risk assessments
+	•	Inconsistent underwriting decisions
+	•	Redundant vendor spend
+	•	Missed signals during catastrophes and renewals
+
+Solution
+
+We’re building a unified risk intelligence platform — a “single pane of glass” — that allows insurers to:
+	•	Import data from any source via open APIs, CSVs, or internal systems
+	•	Normalize and enrich the data with AI-assisted mapping and transformation
+	•	Visualize risk across portfolios in geospatial, tabular, and temporal formats
+	•	Run models on exposure, climate risk, cyber, or other emerging threats
+	•	Export insights back into underwriting workflows or business intelligence tools
+
+Think: Databricks + PowerBI + Plaid — purpose-built for risk professionals.
+
+Why Now
+	•	Climate risk, cyber, and CAT events are increasing in frequency and severity.
+	•	Regulators and reinsurers demand better, explainable risk visibility.
+	•	Insurers are actively modernizing data infrastructure but lack verticalized tools.
+	•	Advances in LLMs and AI/ML make it easier to wrangle messy, semi-structured data at scale.
+
+Differentiation
+
+Unlike generic data platforms or niche risk tools, our platform is:
+	•	Insurance-native — built with carriers and MGAs in mind
+	•	API-first — plug in third-party sources like Demex, Zesty.ai, Tomorrow.io, CoreLogic, or internal systems
+	•	AI-enhanced — use machine learning to uncover patterns, normalize entity data, and build risk scores
+	•	Modular — export to Snowflake, Databricks, Excel, or integrate with policy admin tools
+
+Go-to-Market
+	•	Initial target: Mid-sized carriers, reinsurers, MGAs, and climate-focused risk consultants
+	•	Pilot use cases: Property CAT aggregation, climate risk dashboards, cyber exposure mapping
+	•	Revenue model: Tiered SaaS with usage-based pricing on data volume and API calls
