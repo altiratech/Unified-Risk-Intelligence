@@ -3,102 +3,117 @@
   "features": [
     {
       "type": "Feature",
-      "geometry": { 
-        "type": "Point", 
-        "coordinates": [-118.2437, 34.0522] 
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.2437,
+          34.0522
+        ]
       },
       "properties": {
         "name": "Los Angeles Office Complex",
         "asset_type": "commercial",
-        "insured_value": 5000000,
-        "fire_index": 3.2,
-        "wind_speed": 12.5,
-        "temperature": 28.5,
-        "humidity": 35.0,
+        "insured_value": 5000000.0,
+        "fire_index": 1.0,
+        "wind_speed": 5.0,
+        "temperature": 20.0,
+        "humidity": 50.0,
         "precipitation": 0.0,
-        "risk_score": 68.4,
-        "risk_level": "high"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": { 
-        "type": "Point", 
-        "coordinates": [-122.4194, 37.7749] 
-      },
-      "properties": {
-        "name": "San Francisco Data Center",
-        "asset_type": "critical_infrastructure",
-        "insured_value": 10000000,
-        "fire_index": 1.8,
-        "wind_speed": 8.2,
-        "temperature": 18.5,
-        "humidity": 65.0,
-        "precipitation": 0.5,
-        "risk_score": 24.3,
+        "risk_score": 0.5,
         "risk_level": "low"
       }
     },
     {
       "type": "Feature",
-      "geometry": { 
-        "type": "Point", 
-        "coordinates": [-115.1398, 36.1699] 
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.4194,
+          37.7749
+        ]
+      },
+      "properties": {
+        "name": "San Francisco Data Center",
+        "asset_type": "critical_infrastructure",
+        "insured_value": 10000000.0,
+        "fire_index": 1.0,
+        "wind_speed": 5.0,
+        "temperature": 20.0,
+        "humidity": 50.0,
+        "precipitation": 0.0,
+        "risk_score": 0.75,
+        "risk_level": "low"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1398,
+          36.1699
+        ]
       },
       "properties": {
         "name": "Las Vegas Casino Resort",
         "asset_type": "hospitality",
-        "insured_value": 15000000,
-        "fire_index": 4.1,
-        "wind_speed": 15.8,
-        "temperature": 35.2,
-        "humidity": 20.0,
+        "insured_value": 15000000.0,
+        "fire_index": 1.0,
+        "wind_speed": 5.0,
+        "temperature": 20.0,
+        "humidity": 50.0,
         "precipitation": 0.0,
-        "risk_score": 89.7,
-        "risk_level": "high"
+        "risk_score": 0.6,
+        "risk_level": "low"
       }
     },
     {
       "type": "Feature",
-      "geometry": { 
-        "type": "Point", 
-        "coordinates": [-112.0740, 33.4484] 
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -112.074,
+          33.4484
+        ]
       },
       "properties": {
         "name": "Phoenix Manufacturing Plant",
         "asset_type": "industrial",
-        "insured_value": 8000000,
-        "fire_index": 3.8,
-        "wind_speed": 14.2,
-        "temperature": 32.1,
-        "humidity": 28.0,
+        "insured_value": 8000000.0,
+        "fire_index": 1.0,
+        "wind_speed": 5.0,
+        "temperature": 20.0,
+        "humidity": 50.0,
         "precipitation": 0.0,
-        "risk_score": 75.6,
-        "risk_level": "high"
+        "risk_score": 0.65,
+        "risk_level": "low"
       }
     },
     {
       "type": "Feature",
-      "geometry": { 
-        "type": "Point", 
-        "coordinates": [-121.4944, 38.5816] 
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.4944,
+          38.5816
+        ]
       },
       "properties": {
         "name": "Sacramento Distribution Center",
         "asset_type": "logistics",
-        "insured_value": 3000000,
-        "fire_index": 2.1,
-        "wind_speed": 9.8,
-        "temperature": 24.3,
-        "humidity": 52.0,
-        "precipitation": 0.2,
-        "risk_score": 42.1,
-        "risk_level": "medium"
+        "insured_value": 3000000.0,
+        "fire_index": 1.0,
+        "wind_speed": 5.0,
+        "temperature": 20.0,
+        "humidity": 50.0,
+        "precipitation": 0.0,
+        "risk_score": 0.45,
+        "risk_level": "low"
       }
     }
   ],
   "metadata": {
-    "generated_at": "2025-01-31T20:54:00Z",
+    "generated_at": "2025-01-31T20:42:00Z",
     "total_assets": 5,
     "data_source": "Tomorrow.io Weather API"
   }
