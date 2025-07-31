@@ -32,6 +32,7 @@ export interface IStorage {
   
   // Data source operations
   getDataSources(organizationId: string): Promise<DataSource[]>;
+  getDataSource(id: string): Promise<DataSource | undefined>;
   createDataSource(dataSource: InsertDataSource): Promise<DataSource>;
   updateDataSourceStatus(id: string, status: string): Promise<void>;
   
@@ -103,6 +104,11 @@ export class DatabaseStorage implements IStorage {
   async createDataSource(dataSource: InsertDataSource): Promise<DataSource> {
     const [created] = await db.insert(dataSources).values(dataSource).returning();
     return created;
+  }
+
+  async getDataSource(id: string): Promise<DataSource | undefined> {
+    const [dataSource] = await db.select().from(dataSources).where(eq(dataSources.id, id));
+    return dataSource;
   }
 
   async updateDataSourceStatus(id: string, status: string): Promise<void> {

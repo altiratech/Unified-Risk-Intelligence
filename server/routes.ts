@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { apiIntegrationService } from "./api-integrations";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -343,6 +344,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting data source:", error);
       res.status(500).json({ message: "Failed to delete data source" });
+    }
+  });
+
+  // API Integration routes
+  app.get('/api/integrations/available', isAuthenticated, (req, res) => {
+    try {
+      const apis = apiIntegrationService.getAvailableAPIs();
+      res.json(apis);
+    } catch (error) {
+      console.error("Error fetching available APIs:", error);
+      res.status(500).json({ message: "Failed to fetch available APIs" });
+    }
+  });
+
+  app.post('/api/integrations/connect/:provider', isAuthenticated, async (req: any, res) => {
+    try {
+      const { provider } = req.params;
+      const { apiKey, location, propertyId } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+
+      let result;
+      switch (provider) {
+        case 'noaa':
+          result = await apiIntegrationService.connectNOAAWeatherAPI(user.organizationId);
+          break;
+        case 'openweather':
+          result = await apiIntegrationService.connectOpenWeatherAPI(user.organizationId, apiKey, location);
+          break;
+        case 'fema':
+          result = await apiIntegrationService.connectFEMAAPI(user.organizationId);
+          break;
+        case 'corelogic':
+          result = await apiIntegrationService.connectCoreLogicAPI(user.organizationId, apiKey, propertyId);
+          break;
+        default:
+          return res.status(400).json({ message: "Unknown API provider" });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error connecting to API:", error);
+      res.status(500).json({ message: "Failed to connect to API" });
     }
   });
 
