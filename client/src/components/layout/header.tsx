@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Shield, Bell } from "lucide-react";
 
 export function Header() {
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: any };
 
   return (
     <header className="bg-white border-b border-slate-200 shadow-sm">

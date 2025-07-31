@@ -43,25 +43,32 @@ export default function Dashboard() {
   }, [isAuthenticated, isLoading, toast]);
 
   // Fetch risk metrics
-  const { data: metrics, isLoading: metricsLoading } = useQuery({
+  const { data: metrics, isLoading: metricsLoading } = useQuery<{
+    totalExposure: string;
+    activePolicies: number;
+    highRiskAreas: number;
+    pml: string;
+    aal: string;
+    maxSingleLoss: string;
+  }>({
     queryKey: ["/api/risk-metrics"],
     retry: false,
   });
 
   // Fetch data sources
-  const { data: dataSources = [], isLoading: dataSourcesLoading } = useQuery({
+  const { data: dataSources = [], isLoading: dataSourcesLoading } = useQuery<any[]>({
     queryKey: ["/api/data-sources"],
     retry: false,
   });
 
   // Fetch risk exposures
-  const { data: exposures = [], isLoading: exposuresLoading } = useQuery({
+  const { data: exposures = [], isLoading: exposuresLoading } = useQuery<any[]>({
     queryKey: ["/api/risk-exposures"],
     retry: false,
   });
 
   // Fetch export jobs
-  const { data: exportJobs = [], isLoading: exportJobsLoading } = useQuery({
+  const { data: exportJobs = [], isLoading: exportJobsLoading } = useQuery<any[]>({
     queryKey: ["/api/export-jobs"],
     retry: false,
   });
