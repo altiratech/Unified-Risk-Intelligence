@@ -26,7 +26,13 @@ import {
   Search,
   Plus,
   Eye,
-  EyeOff
+  EyeOff,
+  Play,
+  Pause,
+  Square,
+  SkipForward,
+  SkipBack,
+  Clock
 } from "lucide-react";
 
 // Mapbox GL JS types
@@ -94,6 +100,11 @@ export default function GeospatialView() {
   const [showWeatherLayers, setShowWeatherLayers] = useState(false);
   const [showHeatLayer, setShowHeatLayer] = useState(false);
   const [showWindLayer, setShowWindLayer] = useState(false);
+  const [animationData, setAnimationData] = useState<any>(null);
+  const [isLoadingAnimation, setIsLoadingAnimation] = useState(false);
+  const [isAnimationPlaying, setIsAnimationPlaying] = useState(false);
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const [animationSpeed, setAnimationSpeed] = useState(1000); // ms between frames
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -379,6 +390,170 @@ export default function GeospatialView() {
     });
   };
 
+  // Load animation data
+  const loadAnimationData = async () => {
+    setIsLoadingAnimation(true);
+    try {
+      const response = await fetch('/api/weather-risk/animation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setAnimationData(result.data);
+        setCurrentFrame(0);
+        toast({
+          title: "Animation Data Loaded",
+          description: `${result.data.animation.timestamps.length} frames ready for playback`,
+        });
+      } else {
+        toast({
+          title: "Animation Failed",
+          description: result.message || "Failed to generate animation data",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Animation Error",
+        description: "Failed to load animation data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingAnimation(false);
+    }
+  };
+
+  // Animation playback controls
+  const playAnimation = () => {
+    if (!animationData || isAnimationPlaying) return;
+    
+    setIsAnimationPlaying(true);
+    
+    const intervalId = setInterval(() => {
+      setCurrentFrame(prev => {
+        const nextFrame = prev + 1;
+        if (nextFrame >= animationData.animation.timestamps.length) {
+          clearInterval(intervalId);
+          setIsAnimationPlaying(false);
+          return 0; // Reset to beginning
+        }
+        return nextFrame;
+      });
+    }, animationSpeed);
+    
+    // Store interval ID for cleanup
+    (window as any).animationInterval = intervalId;
+  };
+
+  const pauseAnimation = () => {
+    setIsAnimationPlaying(false);
+    if ((window as any).animationInterval) {
+      clearInterval((window as any).animationInterval);
+    }
+  };
+
+  const stopAnimation = () => {
+    pauseAnimation();
+    setCurrentFrame(0);
+  };
+
+  const nextFrame = () => {
+    if (!animationData) return;
+    setCurrentFrame(prev => Math.min(prev + 1, animationData.animation.timestamps.length - 1));
+  };
+
+  const previousFrame = () => {
+    setCurrentFrame(prev => Math.max(prev - 1, 0));
+  };
+
+  // Update map with animation frame data
+  const updateMapWithFrame = (frameIndex: number) => {
+    if (!map.current || !animationData) return;
+
+    // Get features for current frame
+    const frameFeatures = animationData.features.filter(
+      (feature: any) => feature.properties.frame_index === frameIndex
+    );
+
+    if (frameFeatures.length === 0) return;
+
+    // Update weather circles with frame data
+    const frameGeoJSON = {
+      type: "FeatureCollection",
+      features: frameFeatures
+    };
+
+    if (map.current.getSource('weather-animation')) {
+      map.current.getSource('weather-animation').setData(frameGeoJSON);
+    } else {
+      map.current.addSource('weather-animation', {
+        type: 'geojson',
+        data: frameGeoJSON
+      });
+
+      // Add animated circles layer
+      map.current.addLayer({
+        id: 'weather-animation-circles',
+        type: 'circle',
+        source: 'weather-animation',
+        paint: {
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['get', 'risk_score'],
+            0, 8,
+            50, 15,
+            100, 25
+          ],
+          'circle-color': [
+            'case',
+            ['<', ['get', 'risk_score'], 25], '#10b981', // Green for low risk
+            ['<', ['get', 'risk_score'], 60], '#f59e0b', // Yellow for medium risk
+            '#ef4444' // Red for high risk
+          ],
+          'circle-opacity': 0.8,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+
+      // Add click events for animation circles
+      map.current.on('click', 'weather-animation-circles', (e: any) => {
+        const features = map.current.queryRenderedFeatures(e.point, {
+          layers: ['weather-animation-circles']
+        });
+
+        if (features.length > 0) {
+          const asset = features[0].properties;
+          setSelectedAsset(asset);
+
+          new window.mapboxgl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(`
+              <div class="p-3">
+                <h3 class="font-semibold text-sm mb-2">${asset.name}</h3>
+                <div class="text-xs text-gray-600 mb-2">
+                  ${new Date(asset.timestamp).toLocaleString()}
+                </div>
+                <div class="space-y-1 text-xs">
+                  <div>Risk Score: <span class="font-medium">${asset.risk_score}</span></div>
+                  <div>Fire Index: <span class="font-medium">${asset.fire_index}</span></div>
+                  <div>Wind Speed: <span class="font-medium">${asset.wind_speed} mph</span></div>
+                  <div>Temperature: <span class="font-medium">${asset.temperature}°C</span></div>
+                </div>
+              </div>
+            `)
+            .addTo(map.current);
+        }
+      });
+    }
+  };
+
   // Manual address search function
   const handleAddressSearch = async () => {
     if (!searchAddress.trim() || !mapboxToken) return;
@@ -643,6 +818,13 @@ export default function GeospatialView() {
     }
   }, [activeTab, weatherRiskData, showWeatherLayers, showHeatLayer, showWindLayer]);
 
+  // Handle animation frame updates
+  useEffect(() => {
+    if (activeTab === "weather" && animationData && map.current) {
+      updateMapWithFrame(currentFrame);
+    }
+  }, [currentFrame, animationData, activeTab]);
+
   // Update map when data changes
   useEffect(() => {
     if (map.current && exposures.length) {
@@ -722,6 +904,16 @@ export default function GeospatialView() {
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoadingWeatherData ? 'animate-spin' : ''}`} />
                   Refresh Weather
+                </Button>
+                
+                <Button 
+                  onClick={loadAnimationData} 
+                  disabled={isLoadingAnimation}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Activity className={`w-4 h-4 ${isLoadingAnimation ? 'animate-spin' : ''}`} />
+                  Forecast Animation
                 </Button>
               </div>
             </div>
@@ -848,6 +1040,103 @@ export default function GeospatialView() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Animation Controls */}
+                {animationData && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Activity className="w-5 h-5" />
+                        Predictive Risk Animation
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {/* Timeline Display */}
+                        <div className="bg-slate-100 p-3 rounded-lg">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-600">Current Time:</span>
+                            <span className="font-medium">
+                              {animationData.animation.timestamps[currentFrame] ? 
+                                new Date(animationData.animation.timestamps[currentFrame]).toLocaleString() :
+                                'No data'
+                              }
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm mt-1">
+                            <span className="text-slate-600">Frame:</span>
+                            <span className="font-medium">
+                              {currentFrame + 1} / {animationData.animation.timestamps.length}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Playback Controls */}
+                        <div className="flex items-center justify-center gap-2">
+                          <Button 
+                            onClick={previousFrame} 
+                            disabled={currentFrame === 0}
+                            variant="outline" 
+                            size="sm"
+                          >
+                            <SkipBack className="w-4 h-4" />
+                          </Button>
+                          
+                          {isAnimationPlaying ? (
+                            <Button onClick={pauseAnimation} variant="outline" size="sm">
+                              <Pause className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Button onClick={playAnimation} variant="outline" size="sm">
+                              <Play className="w-4 h-4" />
+                            </Button>
+                          )}
+                          
+                          <Button onClick={stopAnimation} variant="outline" size="sm">
+                            <Square className="w-4 h-4" />
+                          </Button>
+                          
+                          <Button 
+                            onClick={nextFrame} 
+                            disabled={currentFrame >= animationData.animation.timestamps.length - 1}
+                            variant="outline" 
+                            size="sm"
+                          >
+                            <SkipForward className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        {/* Speed Control */}
+                        <div className="flex items-center gap-3">
+                          <Label htmlFor="animation-speed" className="flex items-center gap-2 text-sm">
+                            <Clock className="w-4 h-4" />
+                            Speed (ms):
+                          </Label>
+                          <Input
+                            id="animation-speed"
+                            type="number"
+                            min="100"
+                            max="3000"
+                            step="100"
+                            value={animationSpeed}
+                            onChange={(e) => setAnimationSpeed(parseInt(e.target.value) || 1000)}
+                            className="w-20"
+                          />
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full bg-slate-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{ 
+                              width: `${((currentFrame + 1) / animationData.animation.timestamps.length) * 100}%` 
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
                 
                 {/* Weather Summary Stats */}
                 {weatherRiskData && (
