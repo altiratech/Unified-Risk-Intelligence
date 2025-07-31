@@ -403,6 +403,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Weather Risk Analysis routes
+  app.post('/api/weather-risk/generate', isAuthenticated, async (req: any, res) => {
+    try {
+      const { spawn } = await import('child_process');
+      const pythonProcess = spawn('python3', [path.join(process.cwd(), 'server/weather-risk.py')], {
+        env: { ...process.env, TOMORROW_IO_API_KEY: process.env.TOMORROW_IO_API_KEY }
+      });
+
+      let output = '';
+      let error = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+
+      pythonProcess.on('close', (code) => {
+        if (code === 0) {
+          res.json({ 
+            success: true, 
+            message: 'Weather risk data generated successfully',
+            output: output.trim()
+          });
+        } else {
+          console.error('Python script error:', error);
+          res.status(500).json({ 
+            success: false, 
+            message: 'Failed to generate weather risk data',
+            error: error.trim()
+          });
+        }
+      });
+
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        pythonProcess.kill();
+        res.status(408).json({ 
+          success: false, 
+          message: 'Weather risk generation timed out' 
+        });
+      }, 30000);
+
+    } catch (error) {
+      console.error("Error generating weather risk data:", error);
+      res.status(500).json({ message: "Failed to generate weather risk data" });
+    }
+  });
+
+  // Serve the generated risk data
+  app.get('/risk_data.geojson', (req, res) => {
+    const filePath = path.join(process.cwd(), 'client/public/risk_data.geojson');
+    
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      // Return sample data if file doesn't exist
+      const sampleData = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [-118.2437, 34.0522] },
+            properties: {
+              name: "Los Angeles Office Complex",
+              asset_type: "commercial",
+              insured_value: 5000000,
+              fire_index: 3.2,
+              wind_speed: 12.5,
+              temperature: 28.5,
+              humidity: 35.0,
+              precipitation: 0.0,
+              risk_score: 68.4,
+              risk_level: "high"
+            }
+          },
+          {
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [-122.4194, 37.7749] },
+            properties: {
+              name: "San Francisco Data Center",
+              asset_type: "critical_infrastructure",
+              insured_value: 10000000,
+              fire_index: 1.8,
+              wind_speed: 8.2,
+              temperature: 18.5,
+              humidity: 65.0,
+              precipitation: 0.5,
+              risk_score: 24.3,
+              risk_level: "low"
+            }
+          },
+          {
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [-115.1398, 36.1699] },
+            properties: {
+              name: "Las Vegas Casino Resort",
+              asset_type: "hospitality",
+              insured_value: 15000000,
+              fire_index: 4.1,
+              wind_speed: 15.8,
+              temperature: 35.2,
+              humidity: 20.0,
+              precipitation: 0.0,
+              risk_score: 89.7,
+              risk_level: "high"
+            }
+          }
+        ],
+        metadata: {
+          generated_at: new Date().toISOString(),
+          total_assets: 3,
+          data_source: "Sample Data"
+        }
+      };
+      res.json(sampleData);
+    }
+  });
+
   // Test endpoint for API integrations (development only)
   if (process.env.NODE_ENV === 'development') {
     app.get('/api/test-integrations', async (req, res) => {
