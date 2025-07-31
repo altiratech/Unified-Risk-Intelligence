@@ -74,14 +74,16 @@ export function APIIntegrations() {
       setShowConnectionDialog(false);
       setConnectionForm({});
       
-      if ((data as any).success) {
+      // Check if response has success field and it's true
+      if ((data as any).success === true) {
         toast({
           title: "API Connected",
           description: `Successfully connected to ${selectedProvider?.name}. Data source created.`,
         });
       } else {
+        // Only show error if success is explicitly false or doesn't exist
         toast({
-          title: (data as any).requiresAuth ? "Authentication Required" : "Connection Failed",
+          title: (data as any).requiresAuth ? "Authentication Required" : "Connection Failed", 
           description: (data as any).error || "Connection failed. Please check your credentials.",
           variant: "destructive",
         });
