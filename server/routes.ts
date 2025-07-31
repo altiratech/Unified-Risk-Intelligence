@@ -532,22 +532,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Test NOAA
         console.log('Testing NOAA...');
-        const noaaResult = await apiIntegrationService.connectNOAAWeatherAPI('test-org');
+        const noaaResult = await apiIntegrationService.connectNOAAWeatherAPI('test-org', 'test-user');
         console.log('NOAA result:', noaaResult.success ? 'SUCCESS' : 'FAILED', noaaResult.error || '');
         
         // Test FEMA
         console.log('Testing FEMA...');
-        const femaResult = await apiIntegrationService.connectFEMAAPI('test-org');
+        const femaResult = await apiIntegrationService.connectFEMAAPI('test-org', 'test-user');
         console.log('FEMA result:', femaResult.success ? 'SUCCESS' : 'FAILED', femaResult.error || '');
         
         // Test OpenWeather with invalid key
         console.log('Testing OpenWeather (invalid key)...');
-        const owInvalidResult = await apiIntegrationService.connectOpenWeatherAPI('test-org', 'invalid_key');
+        const owInvalidResult = await apiIntegrationService.connectOpenWeatherAPI('test-org', 'test-user', 'invalid_key', 'test-location');
         console.log('OpenWeather (invalid) result:', owInvalidResult.success ? 'SUCCESS' : 'FAILED', owInvalidResult.error || '');
         
         // Test CoreLogic
         console.log('Testing CoreLogic...');
-        const corelogicResult = await apiIntegrationService.connectCoreLogicAPI('test-org', 'test_key');
+        const corelogicResult = await apiIntegrationService.connectCoreLogicAPI('test-org', 'test-user', 'test_key', 'test_property');
         console.log('CoreLogic result:', corelogicResult.success ? 'SUCCESS' : 'FAILED', corelogicResult.error || '');
         
         res.json({
