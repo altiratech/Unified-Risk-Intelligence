@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUpload } from "@/components/ui/file-upload";
 import { RiskMap } from "@/components/ui/risk-map";
 import { PortfolioChart } from "@/components/ui/portfolio-chart";
+import { PortfolioAnalytics } from "@/components/ui/portfolio-analytics";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
@@ -70,6 +71,16 @@ export default function Dashboard() {
   // Fetch export jobs
   const { data: exportJobs = [], isLoading: exportJobsLoading } = useQuery<any[]>({
     queryKey: ["/api/export-jobs"],
+    retry: false,
+  });
+
+  // Fetch enhanced portfolio analytics
+  const { data: portfolioAnalytics, isLoading: analyticsLoading } = useQuery<{
+    success: boolean;
+    data: any;
+    calculatedAt: string;
+  }>({
+    queryKey: ["/api/portfolio-analytics"],
     retry: false,
   });
 
@@ -196,6 +207,22 @@ export default function Dashboard() {
               </Card>
             </div>
           </div>
+
+          {/* Enhanced Portfolio Analytics */}
+          {portfolioAnalytics?.success && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-slate-900">Portfolio Analytics</h3>
+                <Badge variant="outline" className="text-xs">
+                  Industry-Standard Calculations
+                </Badge>
+              </div>
+              <PortfolioAnalytics 
+                data={portfolioAnalytics.data} 
+                isLoading={analyticsLoading}
+              />
+            </div>
+          )}
 
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
