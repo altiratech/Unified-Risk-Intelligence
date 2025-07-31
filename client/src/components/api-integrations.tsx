@@ -82,7 +82,7 @@ export function APIIntegrations() {
       } else {
         toast({
           title: (data as any).requiresAuth ? "Authentication Required" : "Connection Failed",
-          description: (data as any).error,
+          description: (data as any).error || "Connection failed. Please check your credentials.",
           variant: "destructive",
         });
       }
