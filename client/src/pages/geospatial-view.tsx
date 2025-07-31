@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -19,13 +22,18 @@ import {
   Activity,
   Map,
   Layers,
-  BarChart3
+  BarChart3,
+  Search,
+  Plus,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 // Mapbox GL JS types
 declare global {
   interface Window {
     mapboxgl: any;
+    MapboxGeocoder: any;
   }
 }
 
@@ -81,6 +89,11 @@ export default function GeospatialView() {
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("exposures");
   const [mapboxToken, setMapboxToken] = useState<string>("");
+  const [searchAddress, setSearchAddress] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [showWeatherLayers, setShowWeatherLayers] = useState(false);
+  const [showHeatLayer, setShowHeatLayer] = useState(false);
+  const [showWindLayer, setShowWindLayer] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -116,20 +129,35 @@ export default function GeospatialView() {
     }
   }, [config]);
 
-  // Load Mapbox GL JS dynamically
+  // Load Mapbox GL JS and Geocoder dynamically
   useEffect(() => {
     if (typeof window !== 'undefined' && !window.mapboxgl) {
+      // Load Mapbox GL JS
       const script = document.createElement('script');
       script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js';
+      
+      // Load Mapbox Geocoder
+      const geocoderScript = document.createElement('script');
+      geocoderScript.src = 'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js';
+      
       script.onload = () => {
-        if (mapboxToken) initializeMap();
+        geocoderScript.onload = () => {
+          if (mapboxToken) initializeMap();
+        };
+        document.head.appendChild(geocoderScript);
       };
       document.head.appendChild(script);
 
-      const link = document.createElement('link');
-      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css';
-      link.rel = 'stylesheet';
-      document.head.appendChild(link);
+      // Add CSS files
+      const mapboxLink = document.createElement('link');
+      mapboxLink.href = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css';
+      mapboxLink.rel = 'stylesheet';
+      document.head.appendChild(mapboxLink);
+
+      const geocoderLink = document.createElement('link');
+      geocoderLink.href = 'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css';
+      geocoderLink.rel = 'stylesheet';
+      document.head.appendChild(geocoderLink);
     } else if (window.mapboxgl && mapboxToken) {
       initializeMap();
     }
@@ -250,12 +278,160 @@ export default function GeospatialView() {
       accessToken: mapboxToken
     });
 
+    // Add navigation controls
+    map.current.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
+
+    // Add geocoder for address search
+    const geocoder = new window.MapboxGeocoder({
+      accessToken: mapboxToken,
+      mapboxgl: window.mapboxgl,
+      placeholder: 'Search for addresses, places...',
+      marker: {
+        color: 'orange'
+      }
+    });
+    
+    map.current.addControl(geocoder, 'top-left');
+
     map.current.on('load', () => {
       addExposureDataToMap();
       if (activeTab === "weather" && weatherRiskData) {
         addWeatherDataToMap();
       }
+      
+      // Initialize weather layers
+      initializeWeatherLayers();
     });
+  };
+
+  // Add comprehensive weather layer functionality
+  const addWeatherLayers = () => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+
+    // Add temperature heat layer
+    if (showHeatLayer && !map.current.getSource('temperature-heatmap')) {
+      map.current.addSource('temperature-heatmap', {
+        type: 'raster',
+        tiles: [
+          `https://api.mapbox.com/v4/mapbox.live-weather-temperature/{z}/{x}/{y}.png?access_token=${mapboxToken}`
+        ],
+        tileSize: 256
+      });
+
+      map.current.addLayer({
+        id: 'temperature-layer',
+        type: 'raster',
+        source: 'temperature-heatmap',
+        paint: {
+          'raster-opacity': 0.6
+        }
+      }, 'exposure-circles');
+    }
+
+    // Add wind layer
+    if (showWindLayer && !map.current.getSource('wind-layer')) {
+      map.current.addSource('wind-layer', {
+        type: 'raster',
+        tiles: [
+          `https://api.mapbox.com/v4/mapbox.live-weather-wind-speed/{z}/{x}/{y}.png?access_token=${mapboxToken}`
+        ],
+        tileSize: 256
+      });
+
+      map.current.addLayer({
+        id: 'wind-visualization',
+        type: 'raster',
+        source: 'wind-layer',
+        paint: {
+          'raster-opacity': 0.7
+        }
+      }, 'exposure-circles');
+    }
+  };
+
+  const removeWeatherLayers = () => {
+    if (!map.current) return;
+
+    const layersToRemove = ['temperature-layer', 'wind-visualization'];
+    const sourcesToRemove = ['temperature-heatmap', 'wind-layer'];
+
+    layersToRemove.forEach(layerId => {
+      if (map.current.getLayer(layerId)) {
+        map.current.removeLayer(layerId);
+      }
+    });
+
+    sourcesToRemove.forEach(sourceId => {
+      if (map.current.getSource(sourceId)) {
+        map.current.removeSource(sourceId);
+      }
+    });
+  };
+
+  const initializeWeatherLayers = () => {
+    if (!map.current) return;
+    
+    // Set up layer toggles
+    map.current.on('styledata', () => {
+      if (showWeatherLayers) {
+        addWeatherLayers();
+      }
+    });
+  };
+
+  // Manual address search function
+  const handleAddressSearch = async () => {
+    if (!searchAddress.trim() || !mapboxToken) return;
+    
+    setIsSearching(true);
+    
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchAddress)}.json?access_token=${mapboxToken}&limit=1`
+      );
+      
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        const [lng, lat] = data.features[0].center;
+        const placeName = data.features[0].place_name;
+        
+        // Fly to location
+        map.current.flyTo({
+          center: [lng, lat],
+          zoom: 12,
+          duration: 2000
+        });
+        
+        // Add marker
+        new window.mapboxgl.Marker({ color: '#f59e0b' })
+          .setLngLat([lng, lat])
+          .setPopup(
+            new window.mapboxgl.Popup({ offset: 25 })
+              .setHTML(`<div class="p-2"><strong>Search Result:</strong><br/>${placeName}</div>`)
+          )
+          .addTo(map.current);
+        
+        toast({
+          title: "Location Found",
+          description: `Found: ${placeName}`,
+        });
+      } else {
+        toast({
+          title: "Location Not Found", 
+          description: "No results found for that address",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Search Error",
+        description: "Failed to search for address",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const addExposureDataToMap = () => {
@@ -453,10 +629,19 @@ export default function GeospatialView() {
     }
   };
 
-  // Handle tab changes
+  // Handle tab changes and weather layer toggles
   useEffect(() => {
     switchMapData(activeTab);
-  }, [activeTab, weatherRiskData]);
+    
+    // Update weather layers when in weather tab
+    if (activeTab === "weather" && map.current && map.current.isStyleLoaded()) {
+      if (showWeatherLayers) {
+        addWeatherLayers();
+      } else {
+        removeWeatherLayers();
+      }
+    }
+  }, [activeTab, weatherRiskData, showWeatherLayers, showHeatLayer, showWindLayer]);
 
   // Update map when data changes
   useEffect(() => {
@@ -510,6 +695,25 @@ export default function GeospatialView() {
                 <p className="text-slate-600">Interactive mapping of risk exposures and weather data</p>
               </div>
               <div className="flex gap-2">
+                {/* Address Search */}
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Search addresses..."
+                    value={searchAddress}
+                    onChange={(e) => setSearchAddress(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddressSearch()}
+                    className="w-48"
+                  />
+                  <Button 
+                    onClick={handleAddressSearch}
+                    disabled={isSearching || !searchAddress.trim()}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Search className={`w-4 h-4 ${isSearching ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
+                
                 <Button 
                   onClick={loadWeatherRiskData} 
                   disabled={isLoadingWeatherData}
@@ -594,6 +798,57 @@ export default function GeospatialView() {
               </TabsContent>
 
               <TabsContent value="weather" className="space-y-6">
+                {/* Weather Layer Controls */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Layers className="w-5 h-5" />
+                      Weather Layer Controls
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="weather-layers" className="flex items-center gap-2">
+                          <Map className="w-4 h-4" />
+                          Weather Layers
+                        </Label>
+                        <Switch
+                          id="weather-layers"
+                          checked={showWeatherLayers}
+                          onCheckedChange={setShowWeatherLayers}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="heat-layer" className="flex items-center gap-2">
+                          <Thermometer className="w-4 h-4" />
+                          Temperature Heat
+                        </Label>
+                        <Switch
+                          id="heat-layer"
+                          checked={showHeatLayer}
+                          onCheckedChange={setShowHeatLayer}
+                          disabled={!showWeatherLayers}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="wind-layer" className="flex items-center gap-2">
+                          <Wind className="w-4 h-4" />
+                          Wind Patterns
+                        </Label>
+                        <Switch
+                          id="wind-layer"
+                          checked={showWindLayer}
+                          onCheckedChange={setShowWindLayer}
+                          disabled={!showWeatherLayers}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
                 {/* Weather Summary Stats */}
                 {weatherRiskData && (
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
