@@ -24,9 +24,7 @@ export default function Landing() {
       {/* Hero Section */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-bold text-slate-900 mb-6">
-            Unified Risk Intelligence Platform
-          </h1>
+          <h1 className="text-4xl font-bold text-slate-900 mb-6">Unified Risk Intelligence</h1>
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
             Consolidate fragmented data sources into a single dashboard with AI-enhanced analytics. 
             Built specifically for insurance carriers and reinsurers.
@@ -174,9 +172,7 @@ export default function Landing() {
           <h2 className="text-3xl font-bold mb-4">
             Ready to modernize your risk intelligence?
           </h2>
-          <p className="text-xl text-slate-300 mb-8">
-            Join leading carriers and reinsurers who trust RiskIQ for their risk assessment needs.
-          </p>
+          <p className="text-xl text-slate-300 mb-8">Join leading carriers and reinsurers who trust Altira for their risk assessment needs.</p>
           <Button 
             size="lg" 
             variant="secondary"
