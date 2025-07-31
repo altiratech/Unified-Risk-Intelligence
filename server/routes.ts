@@ -383,6 +383,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case 'corelogic':
           result = await apiIntegrationService.connectCoreLogicAPI(user.organizationId, apiKey, propertyId);
           break;
+        case 'demex':
+          result = await apiIntegrationService.connectDemexAPI(user.organizationId, apiKey, req.body.portfolioId);
+          break;
+        case 'zesty':
+          result = await apiIntegrationService.connectZestyAiAPI(user.organizationId, apiKey, req.body.propertyAddress);
+          break;
+        case 'tomorrow':
+          result = await apiIntegrationService.connectTomorrowIoAPI(user.organizationId, apiKey, location);
+          break;
         default:
           return res.status(400).json({ message: "Unknown API provider" });
       }
