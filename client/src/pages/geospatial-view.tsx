@@ -80,6 +80,7 @@ export default function GeospatialView() {
   const [isLoadingWeatherData, setIsLoadingWeatherData] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("exposures");
+  const [mapboxToken, setMapboxToken] = useState<string>("");
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -102,22 +103,37 @@ export default function GeospatialView() {
     retry: false,
   });
 
+  // Fetch Mapbox config
+  const { data: config } = useQuery<{mapboxAccessToken: string}>({
+    queryKey: ["/api/config"],
+    retry: false,
+  });
+
+  // Update mapbox token when config loads
+  useEffect(() => {
+    if (config?.mapboxAccessToken) {
+      setMapboxToken(config.mapboxAccessToken);
+    }
+  }, [config]);
+
   // Load Mapbox GL JS dynamically
   useEffect(() => {
     if (typeof window !== 'undefined' && !window.mapboxgl) {
       const script = document.createElement('script');
       script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js';
-      script.onload = initializeMap;
+      script.onload = () => {
+        if (mapboxToken) initializeMap();
+      };
       document.head.appendChild(script);
 
       const link = document.createElement('link');
       link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css';
       link.rel = 'stylesheet';
       document.head.appendChild(link);
-    } else if (window.mapboxgl) {
+    } else if (window.mapboxgl && mapboxToken) {
       initializeMap();
     }
-  }, []);
+  }, [mapboxToken]);
 
   // Load weather risk data
   const loadWeatherRiskData = async () => {
@@ -223,15 +239,15 @@ export default function GeospatialView() {
   };
 
   const initializeMap = () => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current || map.current || !mapboxToken) return;
 
-    // Initialize Mapbox map with a public access token (replace with your own)
+    // Initialize Mapbox map with your access token
     map.current = new window.mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [-98.5795, 39.8283], // Center of US
       zoom: 4,
-      accessToken: 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw' // Public Mapbox token
+      accessToken: mapboxToken
     });
 
     map.current.on('load', () => {

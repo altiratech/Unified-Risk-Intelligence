@@ -461,6 +461,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Provide frontend with Mapbox access token
+  app.get('/api/config', (req, res) => {
+    res.json({
+      mapboxAccessToken: process.env.MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
+    });
+  });
+
   // Serve the generated risk data
   app.get('/risk_data.geojson', (req, res) => {
     const filePath = path.join(process.cwd(), 'client/public/risk_data.geojson');
