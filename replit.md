@@ -4,6 +4,17 @@
 
 This is an insurance risk intelligence platform built as a full-stack web application that consolidates fragmented data sources into a unified dashboard. The application is designed for insurance carriers, reinsurers, MGAs, and risk consultants to assess, visualize, and manage risk exposure data across multiple channels.
 
+## Recent Changes (January 31, 2025)
+
+### Weather Risk Integration
+- **Integrated weather risk visualization** into the existing "Geospatial View" tab
+- **Added Tomorrow.io API integration** via Python backend script for real-time weather data
+- **Implemented risk scoring system** using fire index × wind speed calculations
+- **Created dual-mode Mapbox visualization** showing both risk exposures and weather risk data
+- **Added interactive tabbed interface** to switch between exposure data and weather risk views
+- **Set up sample weather data** with 5 asset locations (LA, SF, Las Vegas, Phoenix, Sacramento)
+- **Configured Tomorrow.io API key** in Replit Secrets for live weather data access
+
 ## User Preferences
 
 ```
