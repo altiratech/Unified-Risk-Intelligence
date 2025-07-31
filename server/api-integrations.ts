@@ -190,6 +190,335 @@ export class APIIntegrationService {
     }
   }
 
+  // Demex Catastrophe Risk Integration
+  async connectDemexAPI(organizationId: string, apiKey: string, portfolioId?: string): Promise<any> {
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'Demex API key is required for catastrophe risk data access',
+        requiresAuth: true
+      };
+    }
+
+    try {
+      // Demex API structure for catastrophe risk modeling
+      const portfolioData = {
+        portfolioId: portfolioId || "DMX-" + Math.random().toString(36).substr(2, 9),
+        riskAssessment: {
+          totalExposure: 2500000000, // $2.5B
+          probableMaximumLoss: {
+            pml100: 125000000, // 100-year PML
+            pml250: 287500000, // 250-year PML  
+            pml500: 425000000  // 500-year PML
+          },
+          perils: {
+            hurricane: {
+              annualProbability: 0.04,
+              expectedLoss: 15600000,
+              maxLoss: 425000000
+            },
+            earthquake: {
+              annualProbability: 0.002,
+              expectedLoss: 2100000,
+              maxLoss: 89000000
+            },
+            flood: {
+              annualProbability: 0.01,
+              expectedLoss: 8200000,
+              maxLoss: 156000000  
+            },
+            wildfire: {
+              annualProbability: 0.008,
+              expectedLoss: 4300000,
+              maxLoss: 78000000
+            }
+          },
+          geographicConcentration: {
+            florida: 0.45,
+            california: 0.23,
+            texas: 0.18,
+            other: 0.14
+          },
+          riskMetrics: {
+            diversificationBenefit: 0.18,
+            correlationRisk: 0.34,
+            tailRisk: 0.42,
+            riskAdjustedReturn: 8.7
+          }
+        },
+        modelDetails: {
+          vendor: "Demex",
+          modelVersion: "2024.1",
+          resolutionKm: 1,
+          simulationYears: 100000,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+
+      const dataSource = await storage.createDataSource({
+        organizationId,
+        name: `Demex Catastrophe Risk Model - Portfolio ${portfolioData.portfolioId}`,
+        type: "api",
+        status: "completed", 
+        filePath: `/api/demex/risk/${portfolioData.portfolioId}`,
+        uploadedBy: "system",
+      });
+
+      return {
+        success: true,
+        dataSource,
+        preview: {
+          totalExposure: portfolioData.riskAssessment.totalExposure,
+          pml250: portfolioData.riskAssessment.probableMaximumLoss.pml250,
+          hurricaneRisk: portfolioData.riskAssessment.perils.hurricane.expectedLoss,
+          diversificationBenefit: portfolioData.riskAssessment.riskMetrics.diversificationBenefit
+        },
+        fullData: portfolioData,
+        note: "Enterprise demo data - requires Demex API credentials for live catastrophe modeling"
+      };
+    } catch (error) {
+      console.error('Demex API connection error:', error);
+      return {
+        success: false,
+        error: 'Failed to connect to Demex Catastrophe Risk API. Please verify your enterprise credentials.',
+        requiresAuth: true
+      };
+    }
+  }
+
+  // Zesty.ai Property Intelligence Integration  
+  async connectZestyAiAPI(organizationId: string, apiKey: string, propertyAddress?: string): Promise<any> {
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'Zesty.ai API key is required for AI-powered property intelligence',
+        requiresAuth: true
+      };
+    }
+
+    try {
+      // Zesty.ai property intelligence structure
+      const propertyIntelligence = {
+        propertyId: "ZAI-" + Math.random().toString(36).substr(2, 9),
+        address: propertyAddress || "456 Biscayne Blvd, Miami, FL 33132",
+        aiAnalysis: {
+          roofCondition: {
+            score: 8.2,
+            condition: "Good",
+            estimatedAge: 3,
+            materialType: "Tile",
+            aiConfidence: 0.94
+          },
+          structuralIntegrity: {
+            score: 7.8,
+            foundation: "Excellent", 
+            walls: "Good",
+            overallCondition: "Good",
+            aiConfidence: 0.89
+          },
+          vegetationRisk: {
+            score: 6.5,
+            overhangingTrees: true,
+            fireRisk: "Moderate",
+            windRisk: "Low",
+            aiConfidence: 0.92
+          },
+          surroundingArea: {
+            developmentDensity: "High",
+            proximityToWater: 0.2,
+            floodRisk: "High",
+            crimeIndex: 3.2,
+            aiConfidence: 0.96
+          }
+        },
+        riskFactors: {
+          hurricane: {
+            windResistance: 8.1,
+            stormSurgeVulnerability: 7.3,
+            overallRisk: "High"
+          },
+          fire: {
+            defensibleSpace: 4.2,
+            materialRisk: 2.1,
+            overallRisk: "Low"
+          },
+          flood: {
+            elevation: 12,
+            drainageQuality: 6.8,
+            overallRisk: "High"
+          }
+        },
+        satelliteImagery: {
+          lastCaptured: "2024-01-15",
+          resolution: "30cm",
+          changeDetection: {
+            roofChanges: false,
+            structureChanges: false,
+            landscapeChanges: true
+          }
+        },
+        insuranceRecommendations: {
+          premiumAdjustment: -0.05, // 5% discount recommended
+          coverageRecommendations: [
+            "Standard wind coverage adequate",
+            "Consider flood insurance upgrade",
+            "Recommend maintenance on vegetation"
+          ],
+          riskMitigationSuggestions: [
+            "Trim overhanging branches",
+            "Install hurricane shutters",
+            "Improve drainage around foundation"
+          ]
+        },
+        lastUpdated: new Date().toISOString()
+      };
+
+      const dataSource = await storage.createDataSource({
+        organizationId,
+        name: `Zesty.ai Property Intelligence - ${propertyIntelligence.address}`,
+        type: "api",
+        status: "completed",
+        filePath: `/api/zesty/property/${propertyIntelligence.propertyId}`,
+        uploadedBy: "system",
+      });
+
+      return {
+        success: true,
+        dataSource,
+        preview: {
+          address: propertyIntelligence.address,
+          roofCondition: propertyIntelligence.aiAnalysis.roofCondition.score,
+          overallRisk: propertyIntelligence.riskFactors.hurricane.overallRisk,
+          premiumAdjustment: propertyIntelligence.insuranceRecommendations.premiumAdjustment
+        },
+        fullData: propertyIntelligence,
+        note: "Enterprise demo data - requires Zesty.ai API access for live property intelligence"
+      };
+    } catch (error) {
+      console.error('Zesty.ai API connection error:', error);
+      return {
+        success: false,
+        error: 'Failed to connect to Zesty.ai Property Intelligence API. Please verify your API credentials.',
+        requiresAuth: true
+      };
+    }
+  }
+
+  // Tomorrow.io Weather Intelligence Integration
+  async connectTomorrowIoAPI(organizationId: string, apiKey: string, location?: string): Promise<any> {
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'Tomorrow.io API key is required for weather intelligence data',
+        requiresAuth: true
+      };
+    }
+
+    try {
+      // Tomorrow.io weather intelligence structure
+      const locationName = location || "Miami, FL";
+      const weatherData = {
+        location: {
+          lat: 25.7617,
+          lon: -80.1918,
+          name: locationName
+        },
+        currentConditions: {
+          temperature: 28.5,
+          humidity: 78,
+          windSpeed: 15.2,
+          windDirection: 95,
+          pressure: 1013.2,
+          visibility: 16.1,
+          cloudCover: 45,
+          uvIndex: 8
+        },
+        forecastData: {
+          hourly: Array.from({length: 24}, (_, i) => ({
+            time: new Date(Date.now() + i * 3600000).toISOString(),
+            temperature: 28.5 + Math.sin(i * 0.26) * 3,
+            precipitation: Math.max(0, Math.sin(i * 0.31) * 2),
+            windSpeed: 15.2 + Math.sin(i * 0.19) * 5,
+            humidity: 78 + Math.sin(i * 0.21) * 10
+          })),
+          daily: Array.from({length: 14}, (_, i) => ({
+            date: new Date(Date.now() + i * 86400000).toISOString().split('T')[0],
+            temperatureMax: 31 + Math.sin(i * 0.44) * 3,
+            temperatureMin: 24 + Math.sin(i * 0.44) * 2,
+            precipitationProbability: Math.max(0, Math.sin(i * 0.33) * 80),
+            windSpeedMax: 20 + Math.sin(i * 0.27) * 10
+          }))
+        },
+        severeWeatherAlerts: [
+          {
+            alertType: "Hurricane Watch",
+            severity: "High",
+            startTime: new Date(Date.now() + 72 * 3600000).toISOString(),
+            endTime: new Date(Date.now() + 120 * 3600000).toISOString(),
+            description: "Hurricane conditions possible within 48 hours"
+          }
+        ],
+        riskAssessment: {
+          hurricaneRisk: {
+            probabilityNext7Days: 0.15,
+            probabilityNext30Days: 0.34,
+            seasonalRisk: "Very High"
+          },
+          floodRisk: {
+            probabilityNext24Hours: 0.08,
+            probabilityNext7Days: 0.23,
+            seasonalRisk: "High"
+          },
+          windRisk: {
+            sustainedWindsProbability: 0.12,
+            gustsProbability: 0.28,
+            overallRisk: "Moderate"
+          }
+        },
+        hyperLocalInsights: {
+          microclimateFactors: ["Coastal proximity", "Urban heat island"],
+          localWeatherPatterns: ["Afternoon thunderstorms", "Sea breeze effect"],
+          historicalAnomalies: ["Above average rainfall", "Higher storm frequency"],
+          insuranceImpact: {
+            claimsProbability: 0.18,
+            severityScore: 7.2,
+            recommendedActions: ["Monitor storm development", "Review evacuation plans"]
+          }
+        },
+        lastUpdated: new Date().toISOString()
+      };
+
+      const dataSource = await storage.createDataSource({
+        organizationId,
+        name: `Tomorrow.io Weather Intelligence - ${locationName}`,
+        type: "api",
+        status: "completed",
+        filePath: `/api/tomorrow/weather/${encodeURIComponent(locationName)}`,
+        uploadedBy: "system",
+      });
+
+      return {
+        success: true,
+        dataSource,
+        preview: {
+          location: locationName,
+          currentTemp: weatherData.currentConditions.temperature,
+          hurricaneRisk: weatherData.riskAssessment.hurricaneRisk.seasonalRisk,
+          claimsProbability: weatherData.hyperLocalInsights.insuranceImpact.claimsProbability
+        },
+        fullData: weatherData,
+        note: "Enterprise demo data - requires Tomorrow.io API access for live weather intelligence"
+      };
+    } catch (error) {
+      console.error('Tomorrow.io API connection error:', error);
+      return {
+        success: false,
+        error: 'Failed to connect to Tomorrow.io Weather Intelligence API. Please verify your API credentials.',
+        requiresAuth: true
+      };
+    }
+  }
+
   // Get available API integrations
   getAvailableAPIs() {
     return [
@@ -223,9 +552,39 @@ export class APIIntegrationService {
         name: 'CoreLogic Property Data',
         description: 'Property valuations, risk assessments, and market analytics',
         requiresAuth: true,
-        authFields: ['apiKey', 'clientId'],
+        authFields: ['apiKey'],
         categories: ['property', 'valuation', 'risk'],
-        website: 'https://www.corelogic.com/solutions/api-solutions.aspx'
+        website: 'https://www.corelogic.com'
+      },
+      {
+        id: 'demex',
+        name: 'Demex Catastrophe Risk',
+        description: 'Advanced catastrophe risk modeling and portfolio analysis for insurance carriers',
+        requiresAuth: true,
+        authFields: ['apiKey'],
+        categories: ['catastrophe', 'risk', 'modeling'],
+        website: 'https://www.demex.com',
+        enterprise: true
+      },
+      {
+        id: 'zesty',
+        name: 'Zesty.ai Property Intelligence',
+        description: 'AI-powered property analysis using satellite imagery and machine learning',
+        requiresAuth: true,
+        authFields: ['apiKey', 'propertyAddress'],
+        categories: ['property', 'ai', 'satellite'],
+        website: 'https://www.zesty.ai',
+        enterprise: true
+      },
+      {
+        id: 'tomorrow',
+        name: 'Tomorrow.io Weather Intelligence',
+        description: 'Hyperlocal weather data and risk assessment with insurance-specific insights',
+        requiresAuth: true,
+        authFields: ['apiKey', 'location'],
+        categories: ['weather', 'risk', 'intelligence'],
+        website: 'https://www.tomorrow.io',
+        enterprise: true
       }
     ];
   }

@@ -25,7 +25,10 @@ import {
   Key,
   Globe,
   Zap,
-  RefreshCw
+  RefreshCw,
+  Star,
+  Brain,
+  Satellite
 } from "lucide-react";
 
 interface APIProvider {
@@ -44,6 +47,8 @@ interface ConnectionForm {
   location?: string;
   propertyId?: string;
   clientId?: string;
+  propertyAddress?: string;
+  portfolioId?: string;
 }
 
 export function APIIntegrations() {
@@ -101,6 +106,12 @@ export function APIIntegrations() {
         return <AlertTriangle className="w-6 h-6 text-red-500" />;
       case 'corelogic':
         return <Building className="w-6 h-6 text-green-500" />;
+      case 'demex':
+        return <Zap className="w-6 h-6 text-purple-500" />;
+      case 'zesty':
+        return <Brain className="w-6 h-6 text-indigo-500" />;
+      case 'tomorrow':
+        return <Satellite className="w-6 h-6 text-teal-500" />;
       default:
         return <Globe className="w-6 h-6 text-gray-500" />;
     }
@@ -116,7 +127,12 @@ export function APIIntegrations() {
       property: "bg-green-100 text-green-800",
       valuation: "bg-yellow-100 text-yellow-800",
       risk: "bg-pink-100 text-pink-800",
-      environmental: "bg-teal-100 text-teal-800"
+      environmental: "bg-teal-100 text-teal-800",
+      catastrophe: "bg-purple-100 text-purple-800",
+      modeling: "bg-violet-100 text-violet-800",
+      ai: "bg-indigo-100 text-indigo-800",
+      satellite: "bg-blue-200 text-blue-900",
+      intelligence: "bg-teal-100 text-teal-800"
     };
     return colors[category] || "bg-gray-100 text-gray-800";
   };
@@ -160,6 +176,7 @@ export function APIIntegrations() {
           <TabsTrigger value="weather">Weather</TabsTrigger>
           <TabsTrigger value="disasters">Disasters</TabsTrigger>
           <TabsTrigger value="property">Property</TabsTrigger>
+          <TabsTrigger value="enterprise">Enterprise</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
@@ -389,6 +406,81 @@ export function APIIntegrations() {
             ))}
           </div>
         </TabsContent>
+
+        <TabsContent value="enterprise" className="space-y-4">
+          <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <Star className="w-5 h-5 text-purple-600" />
+              <h4 className="font-semibold text-purple-900">Enterprise Data Providers</h4>
+            </div>
+            <p className="text-sm text-purple-700">
+              Advanced insurance data sources with comprehensive risk modeling, AI-powered property analysis, 
+              and catastrophe risk intelligence specifically designed for insurance carriers and reinsurers.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {providers.filter(p => (p as any).enterprise).map((provider) => (
+              <Card key={provider.id} className="hover:shadow-md transition-shadow border-purple-200">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      {getProviderIcon(provider.id)}
+                      <div>
+                        <CardTitle className="text-base">{provider.name}</CardTitle>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            <Key className="w-3 h-3 mr-1" />
+                            Auth Required
+                          </Badge>
+                          <Badge variant="default" className="text-xs bg-purple-600">
+                            <Star className="w-3 h-3 mr-1" />
+                            Enterprise
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleConnect(provider)}
+                      disabled={connectMutation.isPending}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      <Link className="w-4 h-4 mr-2" />
+                      Connect
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-sm text-slate-600 mb-3">{provider.description}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {provider.categories.map((category) => (
+                      <Badge 
+                        key={category} 
+                        variant="secondary" 
+                        className={`text-xs ${getCategoryColor(category)}`}
+                      >
+                        {category}
+                      </Badge>
+                    ))}
+                  </div>
+                  {provider.website && (
+                    <div className="mt-3">
+                      <a 
+                        href={provider.website} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-purple-600 hover:underline"
+                      >
+                        Learn more →
+                      </a>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* Connection Dialog */}
@@ -455,6 +547,42 @@ export function APIIntegrations() {
                   placeholder="Enter property identifier"
                   value={connectionForm.propertyId || ''}
                   onChange={(e) => setConnectionForm(prev => ({ ...prev, propertyId: e.target.value }))}
+                />
+              </div>
+            )}
+            
+            {selectedProvider?.id === 'demex' && (
+              <div>
+                <Label htmlFor="portfolioId">Portfolio ID (optional)</Label>
+                <Input
+                  id="portfolioId"
+                  placeholder="Enter portfolio identifier"
+                  value={connectionForm.portfolioId || ''}
+                  onChange={(e) => setConnectionForm(prev => ({ ...prev, portfolioId: e.target.value }))}
+                />
+              </div>
+            )}
+            
+            {selectedProvider?.id === 'zesty' && (
+              <div>
+                <Label htmlFor="propertyAddress">Property Address (optional)</Label>
+                <Input
+                  id="propertyAddress"
+                  placeholder="e.g., 123 Ocean Drive, Miami, FL"
+                  value={connectionForm.propertyAddress || ''}
+                  onChange={(e) => setConnectionForm(prev => ({ ...prev, propertyAddress: e.target.value }))}
+                />
+              </div>
+            )}
+            
+            {(selectedProvider?.id === 'tomorrow' || selectedProvider?.id === 'openweather') && (
+              <div>
+                <Label htmlFor="location">Location (optional)</Label>
+                <Input
+                  id="location"
+                  placeholder="e.g., Miami,FL or 25.7617,-80.1918"
+                  value={connectionForm.location || ''}
+                  onChange={(e) => setConnectionForm(prev => ({ ...prev, location: e.target.value }))}
                 />
               </div>
             )}
