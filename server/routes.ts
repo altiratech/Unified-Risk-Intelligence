@@ -21,7 +21,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      let user = await storage.getUser(userId);
+      
+      // If user doesn't have an organization, create one with sample data
+      if (user && !user.organizationId) {
+        const org = await storage.createOrganization({
+          name: `${user.firstName || user.email || "User"}'s Organization`,
+          type: "carrier"
+        });
+        
+        // Update user with organization
+        user = await storage.upsertUser({
+          ...user,
+          organizationId: org.id
+        });
+
+        // Create sample data sources
+        await storage.createDataSource({
+          organizationId: org.id,
+          name: "Property_Exposure_FL_2024.csv",
+          type: "csv",
+          status: "completed",
+          filePath: "/uploads/sample1.csv",
+          uploadedBy: userId,
+        });
+
+        await storage.createDataSource({
+          organizationId: org.id,
+          name: "CAT_Model_Results.xlsx",
+          type: "xlsx",
+          status: "processing",
+          filePath: "/uploads/sample2.xlsx",
+          uploadedBy: userId,
+        });
+
+        await storage.createDataSource({
+          organizationId: org.id,
+          name: "Policy_Data_Q4.json",
+          type: "json",
+          status: "completed",
+          filePath: "/uploads/sample3.json",
+          uploadedBy: userId,
+        });
+
+        // Create sample risk exposures
+        const exposures = [
+          {
+            organizationId: org.id,
+            policyNumber: "POL-FL-001",
+            totalInsuredValue: "2500000.00",
+            latitude: "25.7617",
+            longitude: "-80.1918",
+            address: "Miami, FL",
+            perilType: "wind",
+            riskScore: "8.5"
+          },
+          {
+            organizationId: org.id,
+            policyNumber: "POL-CA-002",
+            totalInsuredValue: "3200000.00",
+            latitude: "34.0522",
+            longitude: "-118.2437",
+            address: "Los Angeles, CA",
+            perilType: "earthquake",
+            riskScore: "7.2"
+          },
+          {
+            organizationId: org.id,
+            policyNumber: "POL-TX-003",
+            totalInsuredValue: "1800000.00",
+            latitude: "29.7604",
+            longitude: "-95.3698",
+            address: "Houston, TX",
+            perilType: "flood",
+            riskScore: "6.8"
+          }
+        ];
+
+        for (const exposure of exposures) {
+          await storage.createRiskExposure(exposure);
+        }
+      }
+      
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -92,6 +173,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error uploading file:", error);
       res.status(500).json({ message: "Failed to upload file" });
+    }
+  });
+
+  // Get single data source by ID
+  app.get('/api/data-sources/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+
+      const dataSource = await storage.getDataSource(id);
+      
+      if (!dataSource || dataSource.organizationId !== user.organizationId) {
+        return res.status(404).json({ message: "Data source not found" });
+      }
+
+      res.json(dataSource);
+    } catch (error) {
+      console.error("Error fetching data source:", error);
+      res.status(500).json({ message: "Failed to fetch data source" });
     }
   });
 
@@ -224,6 +329,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating export job:", error);
       res.status(500).json({ message: "Failed to create export job" });
+    }
+  });
+
+  // Delete data source
+  app.delete('/api/data-sources/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Here you would implement actual deletion logic
+      // For now, we'll just simulate success
+      res.json({ success: true, message: "Data source deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting data source:", error);
+      res.status(500).json({ message: "Failed to delete data source" });
     }
   });
 

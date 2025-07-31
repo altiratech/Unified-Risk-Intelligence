@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Link, useLocation } from "wouter";
 import { 
   Upload, 
   Database, 
@@ -18,6 +19,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
+  const [location] = useLocation();
+  
   const handleLogout = () => {
     window.location.href = "/api/logout";
   };
@@ -30,20 +33,30 @@ export function Sidebar({ className }: SidebarProps) {
             Data Management
           </h3>
           <nav className="space-y-1">
-            <a 
-              href="#" 
-              className="flex items-center px-3 py-2 text-sm font-medium text-primary bg-primary/10 rounded-lg"
+            <Link 
+              href="/" 
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-lg",
+                location === "/" 
+                  ? "text-primary bg-primary/10" 
+                  : "text-slate-700 hover:bg-slate-100"
+              )}
             >
-              <Upload className="mr-3 w-4 h-4 text-primary" />
-              Import Data
-            </a>
-            <a 
-              href="#" 
-              className="flex items-center px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg"
+              <Upload className={cn("mr-3 w-4 h-4", location === "/" ? "text-primary" : "text-slate-400")} />
+              Dashboard
+            </Link>
+            <Link 
+              href="/data-sources" 
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-lg",
+                location === "/data-sources" 
+                  ? "text-primary bg-primary/10" 
+                  : "text-slate-700 hover:bg-slate-100"
+              )}
             >
-              <Database className="mr-3 w-4 h-4 text-slate-400" />
+              <Database className={cn("mr-3 w-4 h-4", location === "/data-sources" ? "text-primary" : "text-slate-400")} />
               Data Sources
-            </a>
+            </Link>
             <a 
               href="#" 
               className="flex items-center px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg"
