@@ -413,6 +413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let output = '';
       let error = '';
+      let responseSet = false;
 
       pythonProcess.stdout.on('data', (data) => {
         output += data.toString();
@@ -423,29 +424,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       pythonProcess.on('close', (code) => {
-        if (code === 0) {
-          res.json({ 
-            success: true, 
-            message: 'Weather risk data generated successfully',
-            output: output.trim()
-          });
-        } else {
-          console.error('Python script error:', error);
-          res.status(500).json({ 
-            success: false, 
-            message: 'Failed to generate weather risk data',
-            error: error.trim()
-          });
+        if (!responseSet) {
+          responseSet = true;
+          if (code === 0) {
+            res.json({ 
+              success: true, 
+              message: 'Weather risk data generated successfully',
+              output: output.trim()
+            });
+          } else {
+            console.error('Python script error:', error);
+            res.status(500).json({ 
+              success: false, 
+              message: 'Failed to generate weather risk data',
+              error: error.trim()
+            });
+          }
         }
       });
 
       // Timeout after 30 seconds
       setTimeout(() => {
-        pythonProcess.kill();
-        res.status(408).json({ 
-          success: false, 
-          message: 'Weather risk generation timed out' 
-        });
+        if (!responseSet) {
+          responseSet = true;
+          pythonProcess.kill();
+          res.status(408).json({ 
+            success: false, 
+            message: 'Weather risk generation timed out' 
+          });
+        }
       }, 30000);
 
     } catch (error) {
