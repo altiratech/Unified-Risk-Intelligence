@@ -372,25 +372,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let result;
       switch (provider) {
         case 'noaa':
-          result = await apiIntegrationService.connectNOAAWeatherAPI(user.organizationId);
+          result = await apiIntegrationService.connectNOAAWeatherAPI(user.organizationId, userId);
           break;
         case 'openweather':
-          result = await apiIntegrationService.connectOpenWeatherAPI(user.organizationId, apiKey, location);
+          result = await apiIntegrationService.connectOpenWeatherAPI(user.organizationId, userId, apiKey, location);
           break;
         case 'fema':
-          result = await apiIntegrationService.connectFEMAAPI(user.organizationId);
+          result = await apiIntegrationService.connectFEMAAPI(user.organizationId, userId);
           break;
         case 'corelogic':
-          result = await apiIntegrationService.connectCoreLogicAPI(user.organizationId, apiKey, propertyId);
+          result = await apiIntegrationService.connectCoreLogicAPI(user.organizationId, userId, apiKey, propertyId);
           break;
         case 'demex':
-          result = await apiIntegrationService.connectDemexAPI(user.organizationId, apiKey, req.body.portfolioId);
+          result = await apiIntegrationService.connectDemexAPI(user.organizationId, userId, apiKey, req.body.portfolioId);
           break;
         case 'zesty':
-          result = await apiIntegrationService.connectZestyAiAPI(user.organizationId, apiKey, req.body.propertyAddress);
+          result = await apiIntegrationService.connectZestyAiAPI(user.organizationId, userId, apiKey, req.body.propertyAddress);
           break;
         case 'tomorrow':
-          result = await apiIntegrationService.connectTomorrowIoAPI(user.organizationId, apiKey, location);
+          result = await apiIntegrationService.connectTomorrowIoAPI(user.organizationId, userId, apiKey, location);
           break;
         default:
           return res.status(400).json({ message: "Unknown API provider" });

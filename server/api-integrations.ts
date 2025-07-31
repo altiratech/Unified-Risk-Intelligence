@@ -4,7 +4,7 @@ import { storage } from "./storage";
 export class APIIntegrationService {
   
   // NOAA Weather Data Integration
-  async connectNOAAWeatherAPI(organizationId: string, apiKey?: string): Promise<any> {
+  async connectNOAAWeatherAPI(organizationId: string, userId: string, apiKey?: string): Promise<any> {
     try {
       // NOAA API doesn't require key for basic weather data
       const response = await fetch('https://api.weather.gov/stations/KMIA/observations/latest');
@@ -17,7 +17,7 @@ export class APIIntegrationService {
           type: "api",
           status: "completed",
           filePath: "/api/noaa/weather",
-          uploadedBy: "system",
+          uploadedBy: userId,
         });
 
         return {
@@ -44,7 +44,7 @@ export class APIIntegrationService {
   }
 
   // OpenWeather API Integration
-  async connectOpenWeatherAPI(organizationId: string, apiKey: string, location = "Miami,FL"): Promise<any> {
+  async connectOpenWeatherAPI(organizationId: string, userId: string, apiKey: string, location = "Miami,FL"): Promise<any> {
     if (!apiKey) {
       return {
         success: false,
@@ -66,7 +66,7 @@ export class APIIntegrationService {
           type: "api",
           status: "completed",
           filePath: `/api/openweather/${location}`,
-          uploadedBy: "system",
+          uploadedBy: userId,
         });
 
         return {
@@ -102,7 +102,7 @@ export class APIIntegrationService {
   }
 
   // FEMA Disaster Data Integration
-  async connectFEMAAPI(organizationId: string): Promise<any> {
+  async connectFEMAAPI(organizationId: string, userId: string): Promise<any> {
     try {
       // FEMA OpenFEMA API - Updated endpoint
       const response = await fetch('https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries?$top=10&$filter=state eq \'FL\'');
@@ -115,7 +115,7 @@ export class APIIntegrationService {
           type: "api",
           status: "completed",
           filePath: "/api/fema/disasters",
-          uploadedBy: "system",
+          uploadedBy: userId,
         });
 
         return {
@@ -144,7 +144,7 @@ export class APIIntegrationService {
   }
 
   // CoreLogic Property Data Integration (requires API key)
-  async connectCoreLogicAPI(organizationId: string, apiKey: string, propertyId = "sample"): Promise<any> {
+  async connectCoreLogicAPI(organizationId: string, userId: string, apiKey: string, propertyId = "sample"): Promise<any> {
     if (!apiKey) {
       return {
         success: false,
@@ -171,7 +171,7 @@ export class APIIntegrationService {
         type: "api",
         status: "completed",
         filePath: `/api/corelogic/${propertyId}`,
-        uploadedBy: "system",
+        uploadedBy: userId,
       });
 
       return {
@@ -191,7 +191,7 @@ export class APIIntegrationService {
   }
 
   // Demex Catastrophe Risk Integration
-  async connectDemexAPI(organizationId: string, apiKey: string, portfolioId?: string): Promise<any> {
+  async connectDemexAPI(organizationId: string, userId: string, apiKey: string, portfolioId?: string): Promise<any> {
     if (!apiKey) {
       return {
         success: false,
@@ -261,7 +261,7 @@ export class APIIntegrationService {
         type: "api",
         status: "completed", 
         filePath: `/api/demex/risk/${portfolioData.portfolioId}`,
-        uploadedBy: "system",
+        uploadedBy: userId,
       });
 
       return {
@@ -287,7 +287,7 @@ export class APIIntegrationService {
   }
 
   // Zesty.ai Property Intelligence Integration  
-  async connectZestyAiAPI(organizationId: string, apiKey: string, propertyAddress?: string): Promise<any> {
+  async connectZestyAiAPI(organizationId: string, userId: string, apiKey: string, propertyAddress?: string): Promise<any> {
     if (!apiKey) {
       return {
         success: false,
@@ -379,7 +379,7 @@ export class APIIntegrationService {
         type: "api",
         status: "completed",
         filePath: `/api/zesty/property/${propertyIntelligence.propertyId}`,
-        uploadedBy: "system",
+        uploadedBy: userId,
       });
 
       return {
@@ -405,7 +405,7 @@ export class APIIntegrationService {
   }
 
   // Tomorrow.io Weather Intelligence Integration
-  async connectTomorrowIoAPI(organizationId: string, apiKey: string, location?: string): Promise<any> {
+  async connectTomorrowIoAPI(organizationId: string, userId: string, apiKey: string, location?: string): Promise<any> {
     if (!apiKey) {
       return {
         success: false,
@@ -494,7 +494,7 @@ export class APIIntegrationService {
         type: "api",
         status: "completed",
         filePath: `/api/tomorrow/weather/${encodeURIComponent(locationName)}`,
-        uploadedBy: "system",
+        uploadedBy: userId,
       });
 
       return {
