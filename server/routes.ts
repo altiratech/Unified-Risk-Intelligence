@@ -461,6 +461,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate predictive animation data
+  app.post('/api/weather-risk/animation', async (req, res) => {
+    try {
+      console.log('Generating weather animation data...');
+      
+      const pythonScript = `
+import sys
+sys.path.append('server')
+from weather_risk import WeatherRiskCalculator
+import json
+
+calculator = WeatherRiskCalculator()
+animation_data = calculator.generate_forecast_animation_data()
+print(json.dumps(animation_data))
+`;
+      
+      const pythonProcess = spawn('python3', ['-c', pythonScript], {
+        env: { ...process.env, PYTHONPATH: '.' }
+      });
+      
+      let output = '';
+      let error = '';
+      let responseSet = false;
+      
+      pythonProcess.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+      
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+      
+      pythonProcess.on('close', (code) => {
+        if (!responseSet) {
+          responseSet = true;
+          if (code === 0) {
+            try {
+              const animationData = JSON.parse(output.trim());
+              console.log('Weather animation data generated successfully');
+              res.json({
+                success: true,
+                data: animationData,
+                message: `Generated ${animationData.animation.timestamps.length} animation frames`
+              });
+            } catch (parseError) {
+              console.error('Error parsing animation data:', parseError);
+              res.status(500).json({ 
+                success: false, 
+                message: 'Failed to parse animation data',
+                error: parseError.message
+              });
+            }
+          } else {
+            console.error('Python animation script failed:', error);
+            res.status(500).json({ 
+              success: false, 
+              message: 'Failed to generate animation data',
+              error: error.trim()
+            });
+          }
+        }
+      });
+
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        if (!responseSet) {
+          responseSet = true;
+          pythonProcess.kill();
+          res.status(408).json({ 
+            success: false, 
+            message: 'Animation generation timed out' 
+          });
+        }
+      }, 30000);
+
+    } catch (error) {
+      console.error('Error generating animation data:', error);
+      res.status(500).json({ message: "Failed to generate animation data" });
+    }
+  });
+
   // Provide frontend with Mapbox access token
   app.get('/api/config', (req, res) => {
     res.json({
