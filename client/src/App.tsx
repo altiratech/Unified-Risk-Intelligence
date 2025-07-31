@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
+import DataSources from "@/pages/data-sources";
+import DataSourceDetail from "@/pages/data-source-detail";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -18,6 +20,8 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Dashboard} />
+          <Route path="/data-sources" component={DataSources} />
+          <Route path="/data-sources/:id" component={DataSourceDetail} />
         </>
       )}
       <Route component={NotFound} />
