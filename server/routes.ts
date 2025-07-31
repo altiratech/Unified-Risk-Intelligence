@@ -394,6 +394,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint for API integrations (development only)
+  if (process.env.NODE_ENV === 'development') {
+    app.get('/api/test-integrations', async (req, res) => {
+      try {
+        console.log('Testing API integrations...');
+        
+        // Test NOAA
+        console.log('Testing NOAA...');
+        const noaaResult = await apiIntegrationService.connectNOAAWeatherAPI('test-org');
+        console.log('NOAA result:', noaaResult.success ? 'SUCCESS' : 'FAILED', noaaResult.error || '');
+        
+        // Test FEMA
+        console.log('Testing FEMA...');
+        const femaResult = await apiIntegrationService.connectFEMAAPI('test-org');
+        console.log('FEMA result:', femaResult.success ? 'SUCCESS' : 'FAILED', femaResult.error || '');
+        
+        // Test OpenWeather with invalid key
+        console.log('Testing OpenWeather (invalid key)...');
+        const owInvalidResult = await apiIntegrationService.connectOpenWeatherAPI('test-org', 'invalid_key');
+        console.log('OpenWeather (invalid) result:', owInvalidResult.success ? 'SUCCESS' : 'FAILED', owInvalidResult.error || '');
+        
+        // Test CoreLogic
+        console.log('Testing CoreLogic...');
+        const corelogicResult = await apiIntegrationService.connectCoreLogicAPI('test-org', 'test_key');
+        console.log('CoreLogic result:', corelogicResult.success ? 'SUCCESS' : 'FAILED', corelogicResult.error || '');
+        
+        res.json({
+          noaa: { success: noaaResult.success, error: noaaResult.error },
+          fema: { success: femaResult.success, error: femaResult.error },
+          openweather: { success: owInvalidResult.success, error: owInvalidResult.error },
+          corelogic: { success: corelogicResult.success, error: corelogicResult.error }
+        });
+      } catch (error) {
+        console.error('Test integration error:', error);
+        res.status(500).json({ error: (error as Error).message });
+      }
+    });
+  }
+
   const httpServer = createServer(app);
   return httpServer;
 }

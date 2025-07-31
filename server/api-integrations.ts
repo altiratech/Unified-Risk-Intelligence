@@ -104,8 +104,8 @@ export class APIIntegrationService {
   // FEMA Disaster Data Integration
   async connectFEMAAPI(organizationId: string): Promise<any> {
     try {
-      // FEMA OpenFEMA API - no key required for basic data
-      const response = await fetch('https://www.fema.gov/api/open/v2/DisastersByState?$top=10&$filter=state eq \'FL\'');
+      // FEMA OpenFEMA API - Updated endpoint
+      const response = await fetch('https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries?$top=10&$filter=state eq \'FL\'');
       const data = await response.json();
       
       if (response.ok) {
@@ -122,12 +122,12 @@ export class APIIntegrationService {
           success: true,
           dataSource,
           preview: {
-            totalDisasters: data.DisastersByState?.length || 0,
-            recentDisasters: data.DisastersByState?.slice(0, 3).map((d: any) => ({
+            totalDisasters: data.DisasterDeclarationsSummaries?.length || 0,
+            recentDisasters: data.DisasterDeclarationsSummaries?.slice(0, 3).map((d: any) => ({
               title: d.declarationTitle,
               date: d.declarationDate,
               type: d.incidentType
-            }))
+            })) || []
           }
         };
       }
