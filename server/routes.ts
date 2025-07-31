@@ -8,6 +8,7 @@ import path from "path";
 import fs from "fs";
 import { insertDataSourceSchema, insertDataMappingSchema, insertRiskExposureSchema, insertExportJobSchema } from "@shared/schema";
 import { riskAnalyticsEngine } from "./risk-analytics";
+import { dataProcessingEngine } from "./data-processing";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -145,33 +146,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         organizationId: user.organizationId,
         name: req.file.originalname,
         type: path.extname(req.file.originalname).toLowerCase().slice(1),
+        status: "processing",
         filePath: req.file.path,
         uploadedBy: userId,
       });
 
-      // Simulate AI processing
-      setTimeout(async () => {
+      // Process the uploaded file with AI-powered analysis
+      console.log("Processing uploaded file with AI:", req.file.originalname);
+      
+      try {
+        const processedData = await dataProcessingEngine.processDataFile(req.file.path, dataSource.id);
+        
+        // Update data source status
         await storage.updateDataSourceStatus(dataSource.id, "completed");
         
-        // Create sample AI mappings
-        if (req.file.originalname.toLowerCase().includes('exposure')) {
+        // Auto-create mapping suggestions
+        for (const suggestion of processedData.mappingSuggestions) {
           await storage.createDataMapping({
             dataSourceId: dataSource.id,
-            sourceField: "Policy_ID",
-            targetField: "policy_number",
-            confidence: "98.5",
-          });
-          
-          await storage.createDataMapping({
-            dataSourceId: dataSource.id,
-            sourceField: "Property_Value",
-            targetField: "total_insured_value",
-            confidence: "85.2",
+            sourceField: suggestion.sourceField,
+            targetField: suggestion.targetField,
+            confidence: suggestion.confidence.toString(),
+            isApproved: suggestion.confidence >= 90 // Auto-approve high confidence mappings
           });
         }
-      }, 2000);
-
-      res.json(dataSource);
+        
+        res.json({ 
+          message: "File uploaded and processed successfully",
+          dataSource,
+          processing: {
+            rowCount: processedData.rowCount,
+            fieldsAnalyzed: processedData.fields.length,
+            mappingSuggestions: processedData.mappingSuggestions.length,
+            qualityScore: processedData.qualityScore.overall,
+            enrichmentOpportunities: processedData.enrichmentOpportunities.length,
+            issues: processedData.qualityScore.issues.length
+          }
+        });
+      } catch (processingError) {
+        console.error("Error processing file:", processingError);
+        await storage.updateDataSourceStatus(dataSource.id, "failed");
+        
+        res.json({ 
+          message: "File uploaded but processing failed",
+          dataSource,
+          error: processingError.message
+        });
+      }
     } catch (error) {
       console.error("Error uploading file:", error);
       res.status(500).json({ message: "Failed to upload file" });
@@ -314,6 +335,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to calculate portfolio analytics",
         error: error.message 
       });
+    }
+  });
+
+  // Data processing analysis routes
+  app.get('/api/data-sources/:id/analysis', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+
+      const dataSource = await storage.getDataSource(id);
+      
+      if (!dataSource || dataSource.organizationId !== user.organizationId) {
+        return res.status(404).json({ message: "Data source not found" });
+      }
+
+      if (!dataSource.filePath || !fs.existsSync(dataSource.filePath)) {
+        return res.status(404).json({ message: "Data file not found" });
+      }
+
+      console.log('Analyzing data source:', id);
+      const analysis = await dataProcessingEngine.processDataFile(dataSource.filePath, id);
+      
+      res.json({
+        success: true,
+        dataSourceId: id,
+        analysis,
+        analyzedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error analyzing data source:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to analyze data source",
+        error: error.message 
+      });
+    }
+  });
+
+  app.post('/api/data-mappings/auto-apply/:dataSourceId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { dataSourceId } = req.params;
+      const { minConfidence = 80 } = req.body;
+      
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+
+      const dataSource = await storage.getDataSource(dataSourceId);
+      if (!dataSource || dataSource.organizationId !== user.organizationId) {
+        return res.status(404).json({ message: "Data source not found" });
+      }
+
+      // Get existing mappings
+      const existingMappings = await storage.getDataMappings(dataSourceId);
+      
+      // Auto-approve mappings above confidence threshold
+      let approvedCount = 0;
+      for (const mapping of existingMappings) {
+        const confidence = parseFloat(mapping.confidence || '0');
+        if (confidence >= minConfidence && !mapping.isApproved) {
+          await storage.updateMappingApproval(mapping.id, true);
+          approvedCount++;
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Auto-approved ${approvedCount} high-confidence mappings`,
+        approvedCount,
+        minConfidence
+      });
+    } catch (error) {
+      console.error("Error auto-applying mappings:", error);
+      res.status(500).json({ message: "Failed to auto-apply mappings" });
     }
   });
 
