@@ -72,13 +72,18 @@ export function Sidebar({ className }: SidebarProps) {
             Risk Analysis
           </h3>
           <nav className="space-y-1">
-            <a 
-              href="#" 
-              className="flex items-center px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg"
+            <Link 
+              href="/geospatial" 
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-lg",
+                location === "/geospatial" 
+                  ? "text-primary bg-primary/10" 
+                  : "text-slate-700 hover:bg-slate-100"
+              )}
             >
-              <MapPin className="mr-3 w-4 h-4 text-slate-400" />
+              <MapPin className={cn("mr-3 w-4 h-4", location === "/geospatial" ? "text-primary" : "text-slate-400")} />
               Geospatial View
-            </a>
+            </Link>
             <a 
               href="#" 
               className="flex items-center px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg"

@@ -9,7 +9,7 @@ import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import DataSources from "@/pages/data-sources";
 import DataSourceDetail from "@/pages/data-source-detail";
-import WeatherRisk from "@/pages/weather-risk";
+import GeospatialView from "@/pages/geospatial-view.tsx";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -23,7 +23,7 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/data-sources" component={DataSources} />
           <Route path="/data-sources/:id" component={DataSourceDetail} />
-          <Route path="/weather-risk" component={WeatherRisk} />
+          <Route path="/geospatial" component={GeospatialView} />
         </>
       )}
       <Route component={NotFound} />
