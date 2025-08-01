@@ -127,6 +127,14 @@ export default function GeospatialView() {
     }
   }, [config]);
 
+  // Load sample weather data on component mount for preview mode
+  useEffect(() => {
+    if (!weatherRiskData) {
+      console.log('Loading initial sample weather data for preview');
+      loadSampleWeatherData();
+    }
+  }, []);
+
   // Load Mapbox GL JS and Geocoder dynamically
   useEffect(() => {
     if (typeof window !== 'undefined' && !window.mapboxgl) {
@@ -164,39 +172,23 @@ export default function GeospatialView() {
   // Load weather risk data
   const loadWeatherRiskData = async () => {
     setIsLoadingWeatherData(true);
+    
+    // For preview mode, skip API calls and use sample data directly
     try {
-      // First try to generate fresh data
-      await fetch('/api/weather-risk/generate', { 
-        method: 'POST',
-        credentials: 'include' 
-      });
-
-      // Then load the generated data
-      const response = await fetch('/risk_data.geojson', {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to load weather risk data');
-      }
-      
-      const data = await response.json();
-      setWeatherRiskData(data);
+      console.log('Loading sample weather data for preview mode');
+      loadSampleWeatherData();
       
       toast({
-        title: "Success",
-        description: `Loaded weather risk data for ${data.metadata.total_assets} assets`,
+        title: "Sample Data Loaded",
+        description: "Using sample weather risk data for preview",
       });
     } catch (error) {
-      console.error('Error loading weather risk data:', error);
+      console.error('Error loading sample weather data:', error);
       toast({
         title: "Error",
-        description: "Failed to load weather risk data. Using sample data.",
+        description: "Failed to load weather data",
         variant: "destructive",
       });
-      
-      // Load sample data as fallback
-      loadSampleWeatherData();
     } finally {
       setIsLoadingWeatherData(false);
     }
@@ -793,7 +785,9 @@ export default function GeospatialView() {
 
   // Handle tab changes and weather layer toggles
   useEffect(() => {
-    switchMapData(activeTab);
+    if (map.current) {
+      switchMapData(activeTab);
+    }
     
     // Update weather layers when in weather tab
     if (activeTab === "weather" && map.current && map.current.isStyleLoaded()) {
@@ -804,6 +798,14 @@ export default function GeospatialView() {
       }
     }
   }, [activeTab, weatherRiskData, showWeatherLayers, showHeatLayer, showWindLayer]);
+
+  // Ensure weather data displays when switching to weather tab
+  useEffect(() => {
+    if (activeTab === "weather" && weatherRiskData && map.current) {
+      console.log('Weather tab active, adding weather data to map');
+      addWeatherDataToMap();
+    }
+  }, [activeTab, weatherRiskData]);
 
   // Handle animation frame updates
   useEffect(() => {
