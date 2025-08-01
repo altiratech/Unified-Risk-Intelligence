@@ -1,0 +1,21 @@
+policy_number,total_insured_value,latitude,longitude,address,peril_type,risk_score
+POL-FL-2024-001,2500000.00,25.7617,-80.1918,"123 Miami Beach Dr, Miami Beach, FL 33139",wind,8.5
+POL-CA-2024-002,1800000.50,34.0522,-118.2437,"456 Sunset Blvd, Los Angeles, CA 90028",earthquake,7.2
+POL-TX-2024-003,950000.25,29.7604,-95.3698,"789 Main St, Houston, TX 77002",flood,6.8
+POL-NY-2024-004,3200000.75,40.7128,-74.0060,"101 Wall St, New York, NY 10005",terrorism,5.5
+POL-FL-2024-005,1650000.00,26.1224,-80.1373,"202 Las Olas Blvd, Fort Lauderdale, FL 33301",wind,9.1
+POL-CA-2024-006,2100000.30,37.7749,-122.4194,"303 Market St, San Francisco, CA 94105",earthquake,8.3
+POL-LA-2024-007,875000.80,29.9511,-90.0715,"404 French Quarter St, New Orleans, LA 70116",flood,9.5
+POL-FL-2024-008,1450000.60,27.9506,-82.4572,"505 Bay Shore Dr, Tampa, FL 33606",wind,7.9
+POL-CA-2024-009,2750000.90,32.7157,-117.1611,"606 Harbor Dr, San Diego, CA 92101",wildfire,6.4
+POL-TX-2024-010,1100000.40,32.7767,-96.7970,"707 Commerce St, Dallas, TX 75202",hail,5.8
+POL-FL-2024-011,1950000.20,25.7907,-80.1300,"808 Ocean Dr, Miami Beach, FL 33139",wind,8.7
+POL-CA-2024-012,2400000.50,34.0522,-118.2437,"909 Hollywood Blvd, Hollywood, CA 90028",earthquake,7.6
+POL-GA-2024-013,780000.90,33.7490,-84.3880,"1010 Peachtree St, Atlanta, GA 30309",tornado,6.2
+POL-SC-2024-014,690000.75,32.7765,-79.9311,"1111 King St, Charleston, SC 29401",flood,8.0
+POL-NC-2024-015,920000.35,35.2271,-80.8431,"1212 Trade St, Charlotte, NC 28202",wind,7.1
+POL-FL-2024-016,1750000.85,28.5383,-81.3792,"1313 Orange Ave, Orlando, FL 32801",wind,8.2
+POL-AL-2024-017,650000.45,30.6954,-88.0399,"1414 Government St, Mobile, AL 36602",flood,7.8
+POL-MS-2024-018,580000.60,32.2988,-90.1848,"1515 State St, Jackson, MS 39201",tornado,6.9
+POL-LA-2024-019,1350000.25,30.2241,-92.0198,"1616 Johnston St, Lafayette, LA 70501",flood,8.4
+POL-TX-2024-020,2850000.70,30.2672,-97.7431,"1717 Congress Ave, Austin, TX 78701",hail,5.3
