@@ -14,6 +14,15 @@ import { csvProcessor } from "./csv-processor";
 import { weatherService } from "./weather-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health endpoint (must be first to avoid auth middleware)
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: "ok", 
+      time: new Date().toISOString(),
+      server: "Risk Intelligence Platform API"
+    });
+  });
+
   // Auth middleware
   await setupAuth(app);
 
@@ -189,11 +198,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (processingError) {
         console.error("Error processing file:", processingError);
         await storage.updateDataSourceStatus(dataSource.id, "failed");
+        const errorMessage = processingError instanceof Error ? processingError.message : 'Processing failed';
         
         res.json({ 
           message: "File uploaded but processing failed",
           dataSource,
-          error: processingError.message
+          error: errorMessage
         });
       }
     } catch (error) {

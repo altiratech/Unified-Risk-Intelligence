@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
+// Load test JWT token for authenticated requests
+const TEST_JWT = process.env.TEST_JWT || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0LXJ1bm5lciIsInJvbGUiOiJhZG1pbiIsIm9yZ2FuaXphdGlvbklkIjoidGVzdC1vcmciLCJleHAiOjE3NTQxNzI5MDUsImlhdCI6MTc1NDA4NjUwNX0.dEAsFn-TQ42dHkUvAzipm-hD5uUp_dckGp-z7_rXPqw";
+
 // Mock fetch for weather API calls
 global.fetch = jest.fn();
 
