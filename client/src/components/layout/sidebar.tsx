@@ -34,15 +34,15 @@ export function Sidebar({ className }: SidebarProps) {
           </h3>
           <nav className="space-y-1">
             <Link 
-              href="/" 
+              href="/dashboard" 
               className={cn(
                 "flex items-center px-3 py-2 text-sm font-medium rounded-lg",
-                location === "/" 
+                location === "/dashboard" 
                   ? "text-primary bg-primary/10" 
                   : "text-slate-700 hover:bg-slate-100"
               )}
             >
-              <Upload className={cn("mr-3 w-4 h-4", location === "/" ? "text-primary" : "text-slate-400")} />
+              <Upload className={cn("mr-3 w-4 h-4", location === "/dashboard" ? "text-primary" : "text-slate-400")} />
               Dashboard
             </Link>
             <Link 
