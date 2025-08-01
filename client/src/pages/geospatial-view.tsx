@@ -718,9 +718,9 @@ export default function GeospatialView() {
             'interpolate',
             ['linear'],
             ['get', 'risk_score'],
-            0, 8,
-            50, 15,
-            100, 25
+            0, 12,
+            50, 20,
+            100, 30
           ],
           'circle-color': [
             'case',
@@ -730,9 +730,12 @@ export default function GeospatialView() {
             '#f59e0b', // Yellow
             '#ef4444'  // Red (high)
           ],
-          'circle-opacity': 0.8,
-          'circle-stroke-width': 2,
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 3,
           'circle-stroke-color': '#ffffff'
+        },
+        layout: {
+          'visibility': 'visible'
         }
       });
 
@@ -770,21 +773,23 @@ export default function GeospatialView() {
   const switchMapData = (dataType: string) => {
     if (!map.current) return;
 
+    console.log('Switching map data to:', dataType);
+
     if (dataType === "exposures") {
       // Show exposure circles, hide weather circles
       if (map.current.getLayer('exposure-circles')) {
         map.current.setLayoutProperty('exposure-circles', 'visibility', 'visible');
+        console.log('Showing exposure circles');
       }
       if (map.current.getLayer('weather-circles')) {
         map.current.setLayoutProperty('weather-circles', 'visibility', 'none');
+        console.log('Hiding weather circles');
       }
     } else if (dataType === "weather") {
       // Show weather circles, hide exposure circles
       if (map.current.getLayer('exposure-circles')) {
         map.current.setLayoutProperty('exposure-circles', 'visibility', 'none');
-      }
-      if (map.current.getLayer('weather-circles')) {
-        map.current.setLayoutProperty('weather-circles', 'visibility', 'visible');
+        console.log('Hiding exposure circles');
       }
       
       // Load weather data if not already loaded
@@ -792,6 +797,14 @@ export default function GeospatialView() {
         loadWeatherRiskData();
       } else {
         addWeatherDataToMap();
+      }
+      
+      // Ensure weather circles are visible
+      if (map.current.getLayer('weather-circles')) {
+        map.current.setLayoutProperty('weather-circles', 'visibility', 'visible');
+        console.log('Showing weather circles');
+      } else {
+        console.log('Weather circles layer not found');
       }
     }
   };
@@ -817,6 +830,37 @@ export default function GeospatialView() {
     if (activeTab === "weather" && weatherRiskData && map.current) {
       console.log('Weather tab active, adding weather data to map');
       addWeatherDataToMap();
+      
+      // Force visibility check after a short delay
+      setTimeout(() => {
+        if (map.current && map.current.getLayer('weather-circles')) {
+          const visibility = map.current.getLayoutProperty('weather-circles', 'visibility');
+          console.log('Weather circles visibility:', visibility);
+          
+          // Debug: Check if features are being rendered
+          const features = map.current.querySourceFeatures('weather-risk');
+          console.log('Weather features in source:', features.length);
+          
+          if (features.length > 0) {
+            console.log('Sample feature coordinates:', features[0].geometry.coordinates);
+            console.log('Sample feature properties:', features[0].properties);
+            
+            // Pan to first weather location to ensure it's visible
+            const [lng, lat] = features[0].geometry.coordinates;
+            map.current.flyTo({
+              center: [lng, lat],
+              zoom: 6,
+              duration: 2000
+            });
+            console.log('Flying to weather location:', [lng, lat]);
+          }
+          
+          if (visibility !== 'visible') {
+            map.current.setLayoutProperty('weather-circles', 'visibility', 'visible');
+            console.log('Forced weather circles to visible');
+          }
+        }
+      }, 100);
     }
   }, [activeTab, weatherRiskData]);
 
