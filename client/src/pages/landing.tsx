@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shield, Database, BarChart3, MapPin, Download, Brain } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Landing() {
   return (
@@ -15,9 +16,11 @@ export default function Landing() {
               </div>
               <h1 className="text-xl text-slate-900 font-semibold">ALTIRA TECHNOLOGIES</h1>
             </div>
-            <Button onClick={() => window.location.href = "/api/login"}>
-              Sign In
-            </Button>
+            <Link href="/dashboard">
+              <Button>
+                Sign In
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -29,13 +32,14 @@ export default function Landing() {
             Consolidate fragmented data sources into a single dashboard with AI-enhanced analytics. 
             Built specifically for insurance carriers and reinsurers.
           </p>
-          <Button 
-            size="lg" 
-            onClick={() => window.location.href = "/api/login"}
-            className="px-8 py-3"
-          >
-            Get Started
-          </Button>
+          <Link href="/dashboard">
+            <Button 
+              size="lg" 
+              className="px-8 py-3"
+            >
+              Get Started
+            </Button>
+          </Link>
         </div>
       </section>
       {/* Features Grid */}
@@ -173,14 +177,15 @@ export default function Landing() {
             Ready to modernize your risk intelligence?
           </h2>
           <p className="text-xl text-slate-300 mb-8">Join leading carriers and reinsurers who trust Altira for their risk assessment needs.</p>
-          <Button 
-            size="lg" 
-            variant="secondary"
-            onClick={() => window.location.href = "/api/login"}
-            className="px-8 py-3"
-          >
-            Start Your Free Trial
-          </Button>
+          <Link href="/dashboard">
+            <Button 
+              size="lg" 
+              variant="secondary"
+              className="px-8 py-3"
+            >
+              Start Your Free Trial
+            </Button>
+          </Link>
         </div>
       </section>
     </div>
