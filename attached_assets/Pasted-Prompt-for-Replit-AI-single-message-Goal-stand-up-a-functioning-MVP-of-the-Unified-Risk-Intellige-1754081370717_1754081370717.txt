@@ -1,0 +1,37 @@
+Prompt for Replit AI (single message)
+Goal: stand up a functioning MVP of the Unified Risk Intelligence Platform within this Replit workspace.
+Architecture
+• Monorepo – apps/frontend (React + Vite + Tailwind) and apps/backend (Node 20, Express, TypeScript).
+• Data layer – Prisma ORM, SQLite dev DB (prisma/schema.prisma). All CRUD must go through Prisma so we can later swap to Cloudflare D1.
+• Shared models – place canonical Exposure and DataSource interfaces in packages/common.
+Tasks (in order)
+	1.	Backend scaffolding
+• Create Express server with src/index.ts and health check route /api/health.
+• Set up .env and .env.example with MAPBOX_TOKEN and TOMORROW_API_KEY.
+• Define Prisma models for DataSource, FieldMapping, and Exposure. Run prisma migrate dev.
+	2.	CSV connector
+• POST /api/upload/csv: accept multipart file, parse with csv-parse, save first 100 rows to Exposure using default field names. Return a JSON preview of the mapped rows.
+	3.	Field mapping wizard logic
+• GET /api/suggest-mapping/:datasourceId: compare uploaded column names to canonical field names with string similarity and return suggestions.
+• PUT /api/mapping/:datasourceId: save user-confirmed mappings then update all stored rows.
+	4.	Tomorrow.io demo connector (stub)
+• Create connectors/tomorrow.ts that fetches hourly weather for a sample lat/lon and stores to ExposureWeather table (schema included in prisma).
+	5.	Export endpoint
+• GET /api/export: accept type=exposures and format=csv|json, stream the file.
+	6.	Frontend
+• Build a left nav: Dashboard, Data Sources, Smart Mapping, Geospatial View, Exports.
+• Data Sources page – list datasource cards with status, row count, last updated, and “Add Data Source” modal (stepper: Choose Connector → Upload/Configure → Preview & Map).
+• Geospatial View – Mapbox GL map that clusters exposures and colors by peril type. Provide a table with filters for risk score, policy_id, and region.
+• Dashboard – onboarding checklist (progress bar) plus key metrics cards.
+	7.	Styling & UX
+• Use Tailwind classes only, no extra UI kit.
+• Show inline error badges if parsing fails (<Badge variant="destructive"> style).
+	8.	Testing
+• Add a sample-data/sample_exposures.csv and a Postman collection for all endpoints.
+	9.	Documentation
+• Update README.md with setup commands, environment variables, and contributor guide.
+Constraints
+• Use TypeScript everywhere.
+• No hard-coded secrets—load from process.env.
+• Keep provider-agnostic: no AWS-specific SDKs. Future goal is Cloudflare Pages + Workers + D1.
+Deliverable for this iteration: a working upload-to-map flow with one CSV and one external API stub, visualized on the dashboard, plus export. Reply “MVP ready” when endpoints, UI, and README all pass manual test.
