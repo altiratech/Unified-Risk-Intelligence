@@ -10,17 +10,13 @@ interface User {
 export function useAuth() {
   const { data: user, isLoading, error } = useQuery<User>({
     queryKey: ["/api/auth/user"],
-    retry: (failureCount, error: any) => {
-      // Don't retry on 401 errors (unauthorized)
-      if (error?.status === 401) {
-        return false;
-      }
-      return failureCount < 2;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: false, // Completely disable for preview mode
+    retry: false, // Don't retry at all for preview mode
+    staleTime: Infinity, // Don't refetch automatically
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false, // Prevent constant auth checks
-    refetchOnMount: true,
+    refetchOnMount: false, // Don't refetch on mount for preview
+    refetchInterval: false, // Disable automatic refetching
   });
 
   const login = () => {
@@ -31,7 +27,7 @@ export function useAuth() {
   return {
     user,
     isAuthenticated: !!user,
-    isLoading,
+    isLoading: false, // Always return false for preview mode
     error,
     login,
   };

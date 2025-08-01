@@ -26,7 +26,7 @@ import {
 export default function Dashboard() {
   const { isAuthenticated } = useAuth();
 
-  // Fetch risk metrics
+  // Disable API queries for preview mode - they cause 401 errors and loading issues
   const { data: metrics, isLoading: metricsLoading } = useQuery<{
     totalExposure: string;
     activePolicies: number;
@@ -36,24 +36,28 @@ export default function Dashboard() {
     maxSingleLoss: string;
   }>({
     queryKey: ["/api/risk-metrics"],
+    enabled: false, // Disable for preview mode
     retry: false,
   });
 
   // Fetch data sources
   const { data: dataSources = [], isLoading: dataSourcesLoading } = useQuery<any[]>({
     queryKey: ["/api/data-sources"],
+    enabled: false, // Disable for preview mode
     retry: false,
   });
 
   // Fetch risk exposures
   const { data: exposures = [], isLoading: exposuresLoading } = useQuery<any[]>({
     queryKey: ["/api/risk-exposures"],
+    enabled: false, // Disable for preview mode
     retry: false,
   });
 
   // Fetch export jobs
   const { data: exportJobs = [], isLoading: exportJobsLoading } = useQuery<any[]>({
     queryKey: ["/api/export-jobs"],
+    enabled: false, // Disable for preview mode
     retry: false,
   });
 
@@ -64,6 +68,7 @@ export default function Dashboard() {
     calculatedAt: string;
   }>({
     queryKey: ["/api/portfolio-analytics"],
+    enabled: false, // Disable for preview mode
     retry: false,
   });
 
