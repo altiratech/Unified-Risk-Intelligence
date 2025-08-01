@@ -4,3 +4,15 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Environment variables and secrets
+.env
+.env.*
+*.key
+*.pem
+secrets.json
+config.json
+
+# Logs
+*.log
+npm-debug.log*
