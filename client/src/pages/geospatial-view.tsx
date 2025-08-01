@@ -297,8 +297,8 @@ export default function GeospatialView() {
     });
   };
 
-  // Add comprehensive weather layer functionality
-  const addWeatherLayers = () => {
+  // Add comprehensive weather layer functionality using Tomorrow.io data
+  const addWeatherLayers = async () => {
     if (!map.current || !map.current.isStyleLoaded()) {
       console.log('Cannot add weather layers - map not ready');
       return;
@@ -306,52 +306,102 @@ export default function GeospatialView() {
 
     console.log('Adding weather layers - Heat:', showHeatLayer, 'Wind:', showWindLayer);
 
-    // Add temperature heat layer using OpenWeatherMap
-    if (showHeatLayer && !map.current.getSource('temperature-heatmap')) {
-      console.log('Adding temperature heat layer');
-      map.current.addSource('temperature-heatmap', {
-        type: 'raster',
-        tiles: [
-          'https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=demo' // Using demo for preview
-        ],
-        tileSize: 256,
-        maxzoom: 10
-      });
+    // Add temperature heat layer using Tomorrow.io data
+    if (showHeatLayer && !map.current.getSource('temperature-data')) {
+      console.log('Fetching temperature layer data from Tomorrow.io');
+      try {
+        const response = await fetch('/api/weather-layers/temperature');
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log('Adding temperature layer with Tomorrow.io data');
+          map.current.addSource('temperature-data', {
+            type: 'geojson',
+            data: result.data
+          });
 
-      map.current.addLayer({
-        id: 'temperature-layer',
-        type: 'raster',
-        source: 'temperature-heatmap',
-        paint: {
-          'raster-opacity': 0.6
+          // Add heatmap layer
+          map.current.addLayer({
+            id: 'temperature-heatmap',
+            type: 'heatmap',
+            source: 'temperature-data',
+            paint: {
+              'heatmap-weight': ['get', 'intensity'],
+              'heatmap-intensity': 0.7,
+              'heatmap-color': [
+                'interpolate',
+                ['linear'],
+                ['heatmap-density'],
+                0, 'rgba(0, 0, 255, 0)',        // Transparent blue
+                0.2, 'rgba(0, 255, 255, 0.5)',  // Cyan
+                0.4, 'rgba(0, 255, 0, 0.6)',    // Green
+                0.6, 'rgba(255, 255, 0, 0.7)',  // Yellow
+                0.8, 'rgba(255, 165, 0, 0.8)',  // Orange
+                1, 'rgba(255, 0, 0, 0.9)'       // Red
+              ],
+              'heatmap-radius': 60,
+              'heatmap-opacity': 0.8
+            }
+          });
+          
+          console.log('Temperature heatmap layer added successfully');
+        } else {
+          console.error('Failed to fetch temperature data:', result.error);
         }
-      });
-      
-      console.log('Temperature layer added successfully');
+      } catch (error) {
+        console.error('Error fetching temperature layer:', error);
+      }
     }
 
-    // Add wind layer using OpenWeatherMap
-    if (showWindLayer && !map.current.getSource('wind-layer')) {
-      console.log('Adding wind layer');
-      map.current.addSource('wind-layer', {
-        type: 'raster',
-        tiles: [
-          'https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=demo' // Using demo for preview
-        ],
-        tileSize: 256,
-        maxzoom: 10
-      });
+    // Add wind layer using Tomorrow.io data
+    if (showWindLayer && !map.current.getSource('wind-data')) {
+      console.log('Fetching wind layer data from Tomorrow.io');
+      try {
+        const response = await fetch('/api/weather-layers/wind');
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log('Adding wind layer with Tomorrow.io data');
+          map.current.addSource('wind-data', {
+            type: 'geojson',
+            data: result.data
+          });
 
-      map.current.addLayer({
-        id: 'wind-visualization',
-        type: 'raster',
-        source: 'wind-layer',
-        paint: {
-          'raster-opacity': 0.7
+          // Add wind circles layer
+          map.current.addLayer({
+            id: 'wind-circles',
+            type: 'circle',
+            source: 'wind-data',
+            paint: {
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['get', 'intensity'],
+                0, 10,
+                1, 40
+              ],
+              'circle-color': [
+                'interpolate',
+                ['linear'],
+                ['get', 'windSpeed'],
+                0, '#e3f2fd',    // Very light blue
+                10, '#90caf9',   // Light blue
+                20, '#2196f3',   // Blue
+                30, '#0d47a1'    // Dark blue
+              ],
+              'circle-opacity': 0.6,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff'
+            }
+          });
+          
+          console.log('Wind layer added successfully');
+        } else {
+          console.error('Failed to fetch wind data:', result.error);
         }
-      });
-      
-      console.log('Wind layer added successfully');
+      } catch (error) {
+        console.error('Error fetching wind layer:', error);
+      }
     }
   };
 
@@ -359,8 +409,8 @@ export default function GeospatialView() {
     if (!map.current) return;
 
     console.log('Removing weather layers');
-    const layersToRemove = ['temperature-layer', 'wind-visualization'];
-    const sourcesToRemove = ['temperature-heatmap', 'wind-layer'];
+    const layersToRemove = ['temperature-heatmap', 'wind-circles'];
+    const sourcesToRemove = ['temperature-data', 'wind-data'];
 
     layersToRemove.forEach(layerId => {
       if (map.current.getLayer(layerId)) {
@@ -850,30 +900,30 @@ export default function GeospatialView() {
   useEffect(() => {
     if (activeTab === "weather" && map.current && map.current.isStyleLoaded()) {
       // Handle temperature layer toggle
-      if (showHeatLayer && !map.current.getLayer('temperature-layer')) {
+      if (showHeatLayer && !map.current.getLayer('temperature-heatmap')) {
         console.log('Adding temperature layer from toggle');
         addWeatherLayers();
-      } else if (!showHeatLayer && map.current.getLayer('temperature-layer')) {
+      } else if (!showHeatLayer && map.current.getLayer('temperature-heatmap')) {
         console.log('Removing temperature layer from toggle');
-        if (map.current.getLayer('temperature-layer')) {
-          map.current.removeLayer('temperature-layer');
+        if (map.current.getLayer('temperature-heatmap')) {
+          map.current.removeLayer('temperature-heatmap');
         }
-        if (map.current.getSource('temperature-heatmap')) {
-          map.current.removeSource('temperature-heatmap');
+        if (map.current.getSource('temperature-data')) {
+          map.current.removeSource('temperature-data');
         }
       }
 
       // Handle wind layer toggle
-      if (showWindLayer && !map.current.getLayer('wind-visualization')) {
+      if (showWindLayer && !map.current.getLayer('wind-circles')) {
         console.log('Adding wind layer from toggle');
         addWeatherLayers();
-      } else if (!showWindLayer && map.current.getLayer('wind-visualization')) {
+      } else if (!showWindLayer && map.current.getLayer('wind-circles')) {
         console.log('Removing wind layer from toggle');
-        if (map.current.getLayer('wind-visualization')) {
-          map.current.removeLayer('wind-visualization');
+        if (map.current.getLayer('wind-circles')) {
+          map.current.removeLayer('wind-circles');
         }
-        if (map.current.getSource('wind-layer')) {
-          map.current.removeSource('wind-layer');
+        if (map.current.getSource('wind-data')) {
+          map.current.removeSource('wind-data');
         }
       }
     }
