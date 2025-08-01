@@ -271,7 +271,9 @@ export default function GeospatialView() {
     // Add navigation controls
     map.current.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
 
-    // Add geocoder for address search
+    // Add geocoder for address search (temporarily disabled to avoid constructor error)
+    // TODO: Fix MapboxGeocoder initialization
+    /*
     const geocoder = new window.MapboxGeocoder({
       accessToken: mapboxToken,
       mapboxgl: window.mapboxgl,
@@ -282,6 +284,7 @@ export default function GeospatialView() {
     });
     
     map.current.addControl(geocoder, 'top-left');
+    */
 
     map.current.on('load', () => {
       addExposureDataToMap();
@@ -296,16 +299,23 @@ export default function GeospatialView() {
 
   // Add comprehensive weather layer functionality
   const addWeatherLayers = () => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!map.current || !map.current.isStyleLoaded()) {
+      console.log('Cannot add weather layers - map not ready');
+      return;
+    }
 
-    // Add temperature heat layer
+    console.log('Adding weather layers - Heat:', showHeatLayer, 'Wind:', showWindLayer);
+
+    // Add temperature heat layer using OpenWeatherMap
     if (showHeatLayer && !map.current.getSource('temperature-heatmap')) {
+      console.log('Adding temperature heat layer');
       map.current.addSource('temperature-heatmap', {
         type: 'raster',
         tiles: [
-          `https://api.mapbox.com/v4/mapbox.live-weather-temperature/{z}/{x}/{y}.png?access_token=${mapboxToken}`
+          'https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=demo' // Using demo for preview
         ],
-        tileSize: 256
+        tileSize: 256,
+        maxzoom: 10
       });
 
       map.current.addLayer({
@@ -315,17 +325,21 @@ export default function GeospatialView() {
         paint: {
           'raster-opacity': 0.6
         }
-      }, 'exposure-circles');
+      });
+      
+      console.log('Temperature layer added successfully');
     }
 
-    // Add wind layer
+    // Add wind layer using OpenWeatherMap
     if (showWindLayer && !map.current.getSource('wind-layer')) {
+      console.log('Adding wind layer');
       map.current.addSource('wind-layer', {
         type: 'raster',
         tiles: [
-          `https://api.mapbox.com/v4/mapbox.live-weather-wind-speed/{z}/{x}/{y}.png?access_token=${mapboxToken}`
+          'https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=demo' // Using demo for preview
         ],
-        tileSize: 256
+        tileSize: 256,
+        maxzoom: 10
       });
 
       map.current.addLayer({
@@ -335,24 +349,29 @@ export default function GeospatialView() {
         paint: {
           'raster-opacity': 0.7
         }
-      }, 'exposure-circles');
+      });
+      
+      console.log('Wind layer added successfully');
     }
   };
 
   const removeWeatherLayers = () => {
     if (!map.current) return;
 
+    console.log('Removing weather layers');
     const layersToRemove = ['temperature-layer', 'wind-visualization'];
     const sourcesToRemove = ['temperature-heatmap', 'wind-layer'];
 
     layersToRemove.forEach(layerId => {
       if (map.current.getLayer(layerId)) {
+        console.log('Removing layer:', layerId);
         map.current.removeLayer(layerId);
       }
     });
 
     sourcesToRemove.forEach(sourceId => {
       if (map.current.getSource(sourceId)) {
+        console.log('Removing source:', sourceId);
         map.current.removeSource(sourceId);
       }
     });
@@ -817,6 +836,8 @@ export default function GeospatialView() {
     
     // Update weather layers when in weather tab
     if (activeTab === "weather" && map.current && map.current.isStyleLoaded()) {
+      console.log('Updating weather layers - showWeatherLayers:', showWeatherLayers, 'showHeatLayer:', showHeatLayer, 'showWindLayer:', showWindLayer);
+      
       if (showWeatherLayers) {
         addWeatherLayers();
       } else {
@@ -824,6 +845,39 @@ export default function GeospatialView() {
       }
     }
   }, [activeTab, weatherRiskData, showWeatherLayers, showHeatLayer, showWindLayer]);
+
+  // Separate effect to handle individual layer toggles
+  useEffect(() => {
+    if (activeTab === "weather" && map.current && map.current.isStyleLoaded()) {
+      // Handle temperature layer toggle
+      if (showHeatLayer && !map.current.getLayer('temperature-layer')) {
+        console.log('Adding temperature layer from toggle');
+        addWeatherLayers();
+      } else if (!showHeatLayer && map.current.getLayer('temperature-layer')) {
+        console.log('Removing temperature layer from toggle');
+        if (map.current.getLayer('temperature-layer')) {
+          map.current.removeLayer('temperature-layer');
+        }
+        if (map.current.getSource('temperature-heatmap')) {
+          map.current.removeSource('temperature-heatmap');
+        }
+      }
+
+      // Handle wind layer toggle
+      if (showWindLayer && !map.current.getLayer('wind-visualization')) {
+        console.log('Adding wind layer from toggle');
+        addWeatherLayers();
+      } else if (!showWindLayer && map.current.getLayer('wind-visualization')) {
+        console.log('Removing wind layer from toggle');
+        if (map.current.getLayer('wind-visualization')) {
+          map.current.removeLayer('wind-visualization');
+        }
+        if (map.current.getSource('wind-layer')) {
+          map.current.removeSource('wind-layer');
+        }
+      }
+    }
+  }, [showHeatLayer, showWindLayer, activeTab]);
 
   // Ensure weather data displays when switching to weather tab
   useEffect(() => {
