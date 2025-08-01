@@ -98,7 +98,7 @@ export default function GeospatialView() {
   const [mapboxToken, setMapboxToken] = useState<string>("");
   const [searchAddress, setSearchAddress] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [showWeatherLayers, setShowWeatherLayers] = useState(false);
+  const [showWeatherLayers, setShowWeatherLayers] = useState(true); // Enable by default for testing
   const [showHeatLayer, setShowHeatLayer] = useState(false);
   const [showWindLayer, setShowWindLayer] = useState(false);
   const [animationData, setAnimationData] = useState<any>(null);
@@ -1167,7 +1167,10 @@ export default function GeospatialView() {
                         <Switch
                           id="heat-layer"
                           checked={showHeatLayer}
-                          onCheckedChange={setShowHeatLayer}
+                          onCheckedChange={(checked) => {
+                            console.log('Temperature Heat toggle clicked:', checked);
+                            setShowHeatLayer(checked);
+                          }}
                           disabled={!showWeatherLayers}
                         />
                       </div>
@@ -1180,7 +1183,10 @@ export default function GeospatialView() {
                         <Switch
                           id="wind-layer"
                           checked={showWindLayer}
-                          onCheckedChange={setShowWindLayer}
+                          onCheckedChange={(checked) => {
+                            console.log('Wind Patterns toggle clicked:', checked);
+                            setShowWindLayer(checked);
+                          }}
                           disabled={!showWeatherLayers}
                         />
                       </div>
