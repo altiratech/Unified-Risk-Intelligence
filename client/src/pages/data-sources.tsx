@@ -65,9 +65,10 @@ export default function DataSources() {
 
 
 
-  // Fetch data sources
+  // Fetch data sources - disabled for preview mode
   const { data: dataSources = [], isLoading: dataSourcesLoading, refetch } = useQuery<DataSource[]>({
     queryKey: ["/api/data-sources"],
+    enabled: false, // Disable for preview mode
     retry: false,
   });
 
