@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthWrapper } from "@/components/layout/auth-wrapper";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import { Link } from "wouter";
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -55,28 +55,15 @@ interface DataSource {
 }
 
 export default function DataSources() {
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const queryClient = useQueryClient();
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
+
 
   // Fetch data sources
   const { data: dataSources = [], isLoading: dataSourcesLoading, refetch } = useQuery<DataSource[]>({
@@ -97,20 +84,9 @@ export default function DataSources() {
       queryClient.invalidateQueries({ queryKey: ["/api/data-sources"] });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to delete data source",
         variant: "destructive",
       });
     },
@@ -153,20 +129,10 @@ export default function DataSources() {
     );
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Header />
+    <AuthWrapper showLoginPrompt={false}>
+      <div className="min-h-screen bg-slate-50">
+        <Header />
       
       <div className="flex">
         <Sidebar />
@@ -413,6 +379,6 @@ export default function DataSources() {
           </Card>
         </main>
       </div>
-    </div>
+    </AuthWrapper>
   );
 }

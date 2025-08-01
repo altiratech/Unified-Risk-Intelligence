@@ -4,7 +4,17 @@
 
 This is an insurance risk intelligence platform built as a full-stack web application that consolidates fragmented data sources into a unified dashboard. The application is designed for insurance carriers, reinsurers, MGAs, and risk consultants to assess, visualize, and manage risk exposure data across multiple channels.
 
-## Recent Changes (January 31, 2025)
+## Recent Changes (August 1, 2025)
+
+### Authentication Navigation Fix (Latest)
+- **Resolved preview navigation issues** by creating AuthWrapper component that prevents forced login redirects
+- **Updated authentication handling** in dashboard and data sources pages to work gracefully in preview mode
+- **Implemented flexible authentication flow** that shows login prompts without breaking navigation
+- **Enhanced useAuth hook** with better retry logic and error handling for preview environments
+- **Removed automatic redirects** that were causing users to be sent to login page when navigating between pages
+- **Added graceful fallback behavior** allowing users to preview the application functionality without authentication barriers
+
+## Previous Changes (January 31, 2025)
 
 ### Enhanced Mapping and Weather Risk Integration
 - **Integrated weather risk visualization** into the existing "Geospatial View" tab
