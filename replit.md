@@ -6,7 +6,17 @@ This is an insurance risk intelligence platform built as a full-stack web applic
 
 ## Recent Changes (August 1, 2025)
 
-### Fixed Application Startup and Preview Navigation (Latest)
+### Tomorrow.io Weather Layer Integration (Latest - August 1, 2025)
+- **Implemented Tomorrow.io API integration** with new backend endpoint `/api/weather-layers/temperature` and `/api/weather-layers/wind`
+- **Created authentic weather data fetching** from Tomorrow.io API for real-time temperature and wind data across 8 geographic locations
+- **Replaced static OpenWeatherMap tiles** with dynamic GeoJSON-based weather overlays using Tomorrow.io data
+- **Added temperature heatmap visualization** with color-coded intensity mapping (blue to red temperature scale)
+- **Implemented wind pattern circles** with size and color based on real wind speed data from Tomorrow.io
+- **Enhanced weather layer controls** with debugging output and proper toggle functionality
+- **Weather layers now display authentic data** from Tomorrow.io API instead of placeholder or mock data
+- **Issue identified**: Map readiness timing causing "Cannot add weather layers - map not ready" errors requiring optimization
+
+### Fixed Application Startup and Preview Navigation
 - **Fixed critical syntax errors** causing app build failures: removed .tsx extension from import statements and fixed missing JSX closing tags
 - **Removed authentication-based routing restrictions** allowing full preview access to all application pages without forced login redirects
 - **Updated Landing page navigation** to use proper routing links instead of authentication API redirects
