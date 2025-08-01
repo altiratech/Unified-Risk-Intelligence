@@ -6,9 +6,12 @@ import { apiIntegrationService } from "./api-integrations";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { parse } from "csv-parse/sync";
 import { insertDataSourceSchema, insertDataMappingSchema, insertRiskExposureSchema, insertExportJobSchema } from "@shared/schema";
 import { riskAnalyticsEngine } from "./risk-analytics";
 import { dataProcessingEngine } from "./data-processing";
+import { csvProcessor } from "./csv-processor";
+import { weatherService } from "./weather-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -330,10 +333,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error calculating portfolio analytics:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       res.status(500).json({ 
         success: false,
         message: "Failed to calculate portfolio analytics",
-        error: error.message 
+        error: errorMessage 
       });
     }
   });
@@ -370,10 +374,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error analyzing data source:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       res.status(500).json({ 
         success: false,
         message: "Failed to analyze data source",
-        error: error.message 
+        error: errorMessage 
       });
     }
   });
@@ -754,9 +759,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const animationData = {
           type: "FeatureCollection",
-          features: [],
+          features: [] as any[],
           animation: {
-            timestamps: [],
+            timestamps: [] as string[],
             duration_hours: 72,
             interval_hours: 3
           },
@@ -792,7 +797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const humidityFactor = Math.max(1.0, (100 - Math.max(humidity, 0)) / 50.0);
             const precipFactor = Math.max(0.1, 1.0 - (precipitation / 5.0));
             
-            const assetMultipliers = {
+            const assetMultipliers: Record<string, number> = {
               commercial: 1.0,
               critical_infrastructure: 1.5,
               hospitality: 1.2,
@@ -848,10 +853,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error('Error generating animation data:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       res.status(500).json({ 
         success: false,
         message: "Failed to generate animation data",
-        error: error.message
+        error: errorMessage
       });
     }
   });
@@ -971,6 +977,229 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
   }
+
+  // ==================== ENHANCED CSV PROCESSING ENDPOINTS ====================
+  
+  // Enhanced CSV upload with raw data storage and field mapping
+  app.post('/api/data-sources/upload-csv', isAuthenticated, upload.single('file'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Create data source record
+      const dataSource = await storage.createDataSource({
+        organizationId: user.organizationId,
+        name: req.file.originalname,
+        type: "csv",
+        status: "processing",
+        filePath: req.file.path,
+        uploadedBy: userId,
+      });
+
+      // Process CSV with enhanced pipeline
+      try {
+        const result = await csvProcessor.processCSVFile(req.file.path, dataSource.id);
+        
+        // Auto-create field mappings for high-confidence suggestions
+        for (const suggestion of result.fieldMappingSuggestions) {
+          if (suggestion.confidence >= 80) {
+            await storage.createDataMapping({
+              dataSourceId: dataSource.id,
+              sourceField: suggestion.sourceField,
+              targetField: suggestion.targetField,
+              confidence: suggestion.confidence.toString(),
+              isApproved: true // Auto-approve high confidence
+            });
+          } else {
+            await storage.createDataMapping({
+              dataSourceId: dataSource.id,
+              sourceField: suggestion.sourceField,
+              targetField: suggestion.targetField,
+              confidence: suggestion.confidence.toString(),
+              isApproved: false // Require manual approval
+            });
+          }
+        }
+
+        await storage.updateDataSourceStatus(dataSource.id, "completed");
+
+        res.json({
+          success: true,
+          message: "CSV uploaded and processed successfully",
+          dataSource,
+          processing: {
+            rowCount: result.rowCount,
+            fieldMappingSuggestions: result.fieldMappingSuggestions.length,
+            autoApprovedMappings: result.fieldMappingSuggestions.filter(s => s.confidence >= 80).length,
+            warnings: result.warnings
+          },
+          preview: result.preview
+        });
+        
+      } catch (processingError) {
+        await storage.updateDataSourceStatus(dataSource.id, "failed");
+        const errorMessage = processingError instanceof Error ? processingError.message : 'Unknown processing error';
+        res.status(500).json({
+          success: false,
+          message: "CSV upload failed during processing",
+          error: errorMessage,
+          dataSource
+        });
+      }
+    } catch (error) {
+      console.error("Error uploading CSV:", error);
+      res.status(500).json({ message: "Failed to upload CSV file" });
+    }
+  });
+
+  // Field mapping suggestions endpoint
+  app.get('/api/data-sources/:id/mapping-suggestions', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+
+      const dataSource = await storage.getDataSource(id);
+      if (!dataSource || dataSource.organizationId !== user.organizationId) {
+        return res.status(404).json({ message: "Data source not found" });
+      }
+
+      const mappings = await storage.getDataMappings(id);
+      res.json({
+        success: true,
+        dataSourceId: id,
+        mappings: mappings.map(m => ({
+          id: m.id,
+          sourceField: m.sourceField,
+          targetField: m.targetField,
+          confidence: parseFloat(m.confidence || '0'),
+          isApproved: m.isApproved,
+          createdAt: m.createdAt
+        }))
+      });
+    } catch (error) {
+      console.error("Error fetching mapping suggestions:", error);
+      res.status(500).json({ message: "Failed to fetch mapping suggestions" });
+    }
+  });
+
+  // Apply field mappings and create risk exposures
+  app.post('/api/data-sources/:id/apply-mappings', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { mappings } = req.body; // { sourceField: targetField }
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+
+      const dataSource = await storage.getDataSource(id);
+      if (!dataSource || dataSource.organizationId !== user.organizationId) {
+        return res.status(404).json({ message: "Data source not found" });
+      }
+
+      // Apply mappings and create risk exposures
+      const result = await csvProcessor.applyMappingsAndCreateExposures(
+        id, 
+        user.organizationId, 
+        mappings
+      );
+
+      await storage.updateDataSourceStatus(id, "completed");
+
+      res.json({
+        success: true,
+        message: "Field mappings applied successfully",
+        dataSourceId: id,
+        processing: {
+          exposuresCreated: result.created,
+          errors: result.errors.length,
+          errorDetails: result.errors.slice(0, 10) // First 10 errors only
+        }
+      });
+    } catch (error) {
+      console.error("Error applying mappings:", error);
+      res.status(500).json({ message: "Failed to apply field mappings" });
+    }
+  });
+
+  // ==================== EXPORT ENDPOINTS ====================
+  
+  // Export risk exposures to CSV/JSON
+  app.get('/api/export/exposures', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+
+      const format = req.query.format as string || 'csv';
+      const exposures = await storage.getRiskExposures(user.organizationId);
+
+      if (format === 'json') {
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename="risk_exposures.json"');
+        return res.json({
+          exportedAt: new Date().toISOString(),
+          organizationId: user.organizationId,
+          totalRecords: exposures.length,
+          data: exposures
+        });
+      }
+
+      // CSV Export
+      const csvHeaders = [
+        'Policy Number',
+        'Total Insured Value', 
+        'Latitude',
+        'Longitude', 
+        'Address',
+        'Peril Type',
+        'Risk Score',
+        'Created At'
+      ];
+
+      const csvRows = exposures.map(exp => [
+        exp.policyNumber || '',
+        exp.totalInsuredValue || '0',
+        exp.latitude || '0',
+        exp.longitude || '0',
+        exp.address || '',
+        exp.perilType || '',
+        exp.riskScore || '0',
+        exp.createdAt?.toISOString() || ''
+      ]);
+
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvRows.map(row => row.map(field => `"${field}"`).join(','))
+      ].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="risk_exposures.csv"');
+      res.send(csvContent);
+
+    } catch (error) {
+      console.error("Error exporting exposures:", error);
+      res.status(500).json({ message: "Failed to export risk exposures" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

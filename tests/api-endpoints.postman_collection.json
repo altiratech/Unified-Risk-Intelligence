@@ -1,0 +1,332 @@
+{
+  "info": {
+    "name": "Risk Intelligence Platform API",
+    "description": "Complete API collection for testing all endpoints of the Risk Intelligence Platform MVP",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "data_source_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "exposure_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/user",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "user"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Data Sources",
+      "item": [
+        {
+          "name": "Get Data Sources",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/data-sources",
+              "host": ["{{base_url}}"],
+              "path": ["api", "data-sources"]
+            }
+          }
+        },
+        {
+          "name": "Upload CSV (Enhanced)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "type": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "sample-data/sample_exposures.csv"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/data-sources/upload-csv",
+              "host": ["{{base_url}}"],
+              "path": ["api", "data-sources", "upload-csv"]
+            }
+          }
+        },
+        {
+          "name": "Get Mapping Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/data-sources/{{data_source_id}}/mapping-suggestions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "data-sources", "{{data_source_id}}", "mapping-suggestions"]
+            }
+          }
+        },
+        {
+          "name": "Apply Field Mappings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "type": "raw",
+              "raw": "{\n  \"mappings\": {\n    \"policy_number\": \"policyNumber\",\n    \"total_insured_value\": \"totalInsuredValue\",\n    \"latitude\": \"latitude\",\n    \"longitude\": \"longitude\",\n    \"address\": \"address\",\n    \"peril_type\": \"perilType\",\n    \"risk_score\": \"riskScore\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/data-sources/{{data_source_id}}/apply-mappings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "data-sources", "{{data_source_id}}", "apply-mappings"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Risk Exposures",
+      "item": [
+        {
+          "name": "Get Risk Exposures",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/risk-exposures",
+              "host": ["{{base_url}}"],
+              "path": ["api", "risk-exposures"]
+            }
+          }
+        },
+        {
+          "name": "Create Risk Exposure",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "type": "raw",
+              "raw": "{\n  \"policyNumber\": \"TEST-POL-001\",\n  \"totalInsuredValue\": \"1500000.00\",\n  \"latitude\": \"25.7617\",\n  \"longitude\": \"-80.1918\",\n  \"address\": \"Test Property Address\",\n  \"perilType\": \"wind\",\n  \"riskScore\": \"7.5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/risk-exposures",
+              "host": ["{{base_url}}"],
+              "path": ["api", "risk-exposures"]
+            }
+          }
+        },
+        {
+          "name": "Get Weather for Exposure",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/risk-exposures/{{exposure_id}}/weather",
+              "host": ["{{base_url}}"],
+              "path": ["api", "risk-exposures", "{{exposure_id}}", "weather"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Weather Services",
+      "item": [
+        {
+          "name": "Batch Update Weather Data",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/weather/batch-update",
+              "host": ["{{base_url}}"],
+              "path": ["api", "weather", "batch-update"]
+            }
+          }
+        },
+        {
+          "name": "Get Temperature Weather Layer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/weather-layers/temperature",
+              "host": ["{{base_url}}"],
+              "path": ["api", "weather-layers", "temperature"]
+            }
+          }
+        },
+        {
+          "name": "Get Wind Weather Layer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/weather-layers/wind",
+              "host": ["{{base_url}}"],
+              "path": ["api", "weather-layers", "wind"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics & Metrics",
+      "item": [
+        {
+          "name": "Get Risk Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/risk-metrics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "risk-metrics"]
+            }
+          }
+        },
+        {
+          "name": "Get Portfolio Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/portfolio-analytics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "portfolio-analytics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Export Functions",
+      "item": [
+        {
+          "name": "Export Exposures (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/export/exposures?format=csv",
+              "host": ["{{base_url}}"],
+              "path": ["api", "export", "exposures"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export Exposures (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/export/exposures?format=json",
+              "host": ["{{base_url}}"],
+              "path": ["api", "export", "exposures"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Export Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/export-jobs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "export-jobs"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "System Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            }
+          }
+        },
+        {
+          "name": "Get App Configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "config"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

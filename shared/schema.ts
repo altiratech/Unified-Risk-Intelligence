@@ -98,6 +98,36 @@ export const exportJobs = pgTable("export_jobs", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Weather observations (Tomorrow.io data storage)
+export const weatherObservations = pgTable("weather_observations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  riskExposureId: varchar("risk_exposure_id").references(() => riskExposures.id),
+  organizationId: varchar("organization_id").references(() => organizations.id).notNull(),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }).notNull(),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }).notNull(),
+  observationTime: timestamp("observation_time").notNull(),
+  temperature: decimal("temperature", { precision: 5, scale: 2 }),
+  windSpeed: decimal("wind_speed", { precision: 5, scale: 2 }),
+  windDirection: decimal("wind_direction", { precision: 5, scale: 1 }),
+  precipitation: decimal("precipitation", { precision: 5, scale: 2 }),
+  humidity: decimal("humidity", { precision: 5, scale: 2 }),
+  pressure: decimal("pressure", { precision: 8, scale: 2 }),
+  visibility: decimal("visibility", { precision: 5, scale: 2 }),
+  uvIndex: decimal("uv_index", { precision: 3, scale: 1 }),
+  cloudCover: decimal("cloud_cover", { precision: 5, scale: 2 }),
+  weatherCode: integer("weather_code"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Raw uploaded data (before mapping)
+export const rawData = pgTable("raw_data", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  dataSourceId: varchar("data_source_id").references(() => dataSources.id).notNull(),
+  rowIndex: integer("row_index").notNull(),
+  rawFields: jsonb("raw_fields").notNull(), // Store original CSV row data
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   organization: one(organizations, {
@@ -157,6 +187,24 @@ export const exportJobsRelations = relations(exportJobs, ({ one }) => ({
   }),
 }));
 
+export const weatherObservationsRelations = relations(weatherObservations, ({ one }) => ({
+  riskExposure: one(riskExposures, {
+    fields: [weatherObservations.riskExposureId],
+    references: [riskExposures.id],
+  }),
+  organization: one(organizations, {
+    fields: [weatherObservations.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+export const rawDataRelations = relations(rawData, ({ one }) => ({
+  dataSource: one(dataSources, {
+    fields: [rawData.dataSourceId],
+    references: [dataSources.id],
+  }),
+}));
+
 // Schema types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -199,3 +247,17 @@ export const insertExportJobSchema = createInsertSchema(exportJobs).omit({
 });
 export type InsertExportJob = z.infer<typeof insertExportJobSchema>;
 export type ExportJob = typeof exportJobs.$inferSelect;
+
+export const insertWeatherObservationSchema = createInsertSchema(weatherObservations).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertWeatherObservation = z.infer<typeof insertWeatherObservationSchema>;
+export type WeatherObservation = typeof weatherObservations.$inferSelect;
+
+export const insertRawDataSchema = createInsertSchema(rawData).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertRawData = z.infer<typeof insertRawDataSchema>;
+export type RawData = typeof rawData.$inferSelect;

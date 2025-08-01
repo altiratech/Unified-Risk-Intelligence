@@ -5,6 +5,8 @@ import {
   dataMappings,
   riskExposures,
   exportJobs,
+  weatherObservations,
+  rawData,
   type User,
   type UpsertUser,
   type Organization,
@@ -17,6 +19,10 @@ import {
   type InsertRiskExposure,
   type ExportJob,
   type InsertExportJob,
+  type WeatherObservation,
+  type InsertWeatherObservation,
+  type RawData,
+  type InsertRawData,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -57,6 +63,16 @@ export interface IStorage {
   getExportJobs(organizationId: string): Promise<ExportJob[]>;
   createExportJob(job: InsertExportJob): Promise<ExportJob>;
   updateExportJobStatus(id: string, status: string, filePath?: string): Promise<void>;
+  
+  // Weather observation operations
+  getWeatherObservations(organizationId: string, riskExposureId?: string): Promise<WeatherObservation[]>;
+  createWeatherObservation(observation: InsertWeatherObservation): Promise<WeatherObservation>;
+  getLatestWeatherForExposure(riskExposureId: string): Promise<WeatherObservation | undefined>;
+  
+  // Raw data operations (for CSV ingest pipeline)
+  createRawDataBatch(dataSourceId: string, rows: any[]): Promise<RawData[]>;
+  getRawData(dataSourceId: string): Promise<RawData[]>;
+  deleteRawData(dataSourceId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -109,13 +125,6 @@ export class DatabaseStorage implements IStorage {
   async getDataSource(id: string): Promise<DataSource | undefined> {
     const [dataSource] = await db.select().from(dataSources).where(eq(dataSources.id, id));
     return dataSource;
-  }
-
-  async updateDataSourceStatus(id: string, status: string): Promise<void> {
-    await db
-      .update(dataSources)
-      .set({ status, updatedAt: new Date() })
-      .where(eq(dataSources.id, id));
   }
 
   // Data mapping operations
@@ -203,6 +212,58 @@ export class DatabaseStorage implements IStorage {
       .update(dataSources)
       .set({ status, updatedAt: new Date() })
       .where(eq(dataSources.id, id));
+  }
+
+  // Weather observation operations
+  async getWeatherObservations(organizationId: string, riskExposureId?: string): Promise<WeatherObservation[]> {
+    const conditions = [eq(weatherObservations.organizationId, organizationId)];
+    if (riskExposureId) {
+      conditions.push(eq(weatherObservations.riskExposureId, riskExposureId));
+    }
+
+    return await db
+      .select()
+      .from(weatherObservations)
+      .where(and(...conditions))
+      .orderBy(desc(weatherObservations.observationTime));
+  }
+
+  async createWeatherObservation(observation: InsertWeatherObservation): Promise<WeatherObservation> {
+    const [created] = await db.insert(weatherObservations).values(observation).returning();
+    return created;
+  }
+
+  async getLatestWeatherForExposure(riskExposureId: string): Promise<WeatherObservation | undefined> {
+    const [weather] = await db
+      .select()
+      .from(weatherObservations)
+      .where(eq(weatherObservations.riskExposureId, riskExposureId))
+      .orderBy(desc(weatherObservations.observationTime))
+      .limit(1);
+    return weather;
+  }
+
+  // Raw data operations
+  async createRawDataBatch(dataSourceId: string, rows: any[]): Promise<RawData[]> {
+    const rawDataRecords = rows.map((row, index) => ({
+      dataSourceId,
+      rowIndex: index,
+      rawFields: row,
+    }));
+
+    return await db.insert(rawData).values(rawDataRecords).returning();
+  }
+
+  async getRawData(dataSourceId: string): Promise<RawData[]> {
+    return await db
+      .select()
+      .from(rawData)
+      .where(eq(rawData.dataSourceId, dataSourceId))
+      .orderBy(rawData.rowIndex);
+  }
+
+  async deleteRawData(dataSourceId: string): Promise<void> {
+    await db.delete(rawData).where(eq(rawData.dataSourceId, dataSourceId));
   }
 }
 
