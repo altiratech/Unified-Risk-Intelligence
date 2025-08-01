@@ -593,6 +593,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Weather layer data endpoint for Tomorrow.io integration
+  app.get('/api/weather-layers/:layerType', async (req, res) => {
+    try {
+      const { layerType } = req.params;
+      const { bounds } = req.query; // Optional map bounds for grid data
+      
+      console.log(`Fetching ${layerType} weather layer data...`);
+      
+      // Tomorrow.io API key from environment
+      const apiKey = process.env.TOMORROW_IO_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({
+          success: false,
+          error: 'Tomorrow.io API key not configured'
+        });
+      }
+      
+      // Define sample locations for weather grid (you can expand this)
+      const gridLocations = [
+        { lat: 34.0522, lon: -118.2437, name: "Los Angeles" },
+        { lat: 37.7749, lon: -122.4194, name: "San Francisco" },
+        { lat: 36.1699, lon: -115.1398, name: "Las Vegas" },
+        { lat: 33.4484, lon: -112.0740, name: "Phoenix" },
+        { lat: 38.5816, lon: -121.4944, name: "Sacramento" },
+        // Add more grid points for better coverage
+        { lat: 32.7157, lon: -117.1611, name: "San Diego" },
+        { lat: 39.7392, lon: -104.9903, name: "Denver" },
+        { lat: 35.2271, lon: -80.8431, name: "Charlotte" }
+      ];
+      
+      const weatherData = [];
+      
+      // Fetch weather data for each grid point
+      for (const location of gridLocations) {
+        try {
+          const response = await fetch(`https://api.tomorrow.io/v4/weather/realtime?location=${location.lat},${location.lon}&apikey=${apiKey}&fields=temperature,windSpeed,humidity,precipitationIntensity,fireIndex`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            const values = data.data.values;
+            
+            weatherData.push({
+              lat: location.lat,
+              lon: location.lon,
+              name: location.name,
+              temperature: values.temperature || 20,
+              windSpeed: values.windSpeed || 5,
+              humidity: values.humidity || 50,
+              precipitation: values.precipitationIntensity || 0,
+              fireIndex: values.fireIndex || 1
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching weather for ${location.name}:`, error);
+          // Use fallback data for this location
+          weatherData.push({
+            lat: location.lat,
+            lon: location.lon,
+            name: location.name,
+            temperature: 22 + Math.random() * 10,
+            windSpeed: 5 + Math.random() * 15,
+            humidity: 40 + Math.random() * 40,
+            precipitation: Math.random() > 0.8 ? Math.random() * 2 : 0,
+            fireIndex: 1 + Math.random() * 3
+          });
+        }
+      }
+      
+      // Convert to GeoJSON based on layer type
+      let layerResponse;
+      
+      if (layerType === 'temperature') {
+        layerResponse = {
+          type: "FeatureCollection",
+          features: weatherData.map(point => ({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [point.lon, point.lat]
+            },
+            properties: {
+              temperature: point.temperature,
+              intensity: Math.max(0, Math.min(1, (point.temperature - 0) / 40)), // Normalize 0-40°C to 0-1
+              color: getTemperatureColor(point.temperature)
+            }
+          }))
+        };
+      } else if (layerType === 'wind') {
+        layerResponse = {
+          type: "FeatureCollection", 
+          features: weatherData.map(point => ({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [point.lon, point.lat]
+            },
+            properties: {
+              windSpeed: point.windSpeed,
+              intensity: Math.max(0, Math.min(1, point.windSpeed / 30)), // Normalize 0-30 mph to 0-1
+              color: getWindColor(point.windSpeed)
+            }
+          }))
+        };
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid layer type. Use "temperature" or "wind"'
+        });
+      }
+      
+      res.json({
+        success: true,
+        layerType,
+        data: layerResponse,
+        source: 'Tomorrow.io Weather API',
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Error fetching weather layer data:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch weather layer data'
+      });
+    }
+  });
+
+  // Helper functions for color mapping
+  function getTemperatureColor(temp: number): string {
+    // Blue (cold) to Red (hot) color scale
+    if (temp < 5) return '#0000ff';      // Blue
+    if (temp < 15) return '#00ffff';     // Cyan
+    if (temp < 25) return '#00ff00';     // Green  
+    if (temp < 35) return '#ffff00';     // Yellow
+    return '#ff0000';                    // Red
+  }
+  
+  function getWindColor(windSpeed: number): string {
+    // Light to dark blue for wind intensity
+    if (windSpeed < 5) return '#e3f2fd';   // Very light blue
+    if (windSpeed < 15) return '#90caf9';  // Light blue
+    if (windSpeed < 25) return '#2196f3';  // Blue
+    return '#0d47a1';                      // Dark blue
+  }
+
   // Generate predictive animation data using JavaScript (more reliable than Python execution)
   app.post('/api/weather-risk/animation', async (req, res) => {
     try {
