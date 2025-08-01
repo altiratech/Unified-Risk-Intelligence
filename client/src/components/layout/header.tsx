@@ -16,7 +16,7 @@ export function Header() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Shield className="text-white w-4 h-4" />
               </div>
-              <h1 className="text-xl font-semibold text-slate-900">RiskIQ Platform</h1>
+              <h1 className="text-xl font-semibold text-slate-900">ALTIRA TECHNOLOGIES</h1>
             </div>
             <nav className="hidden md:flex space-x-6">
               <a href="#" className="text-primary font-medium border-b-2 border-primary pb-4">Dashboard</a>
