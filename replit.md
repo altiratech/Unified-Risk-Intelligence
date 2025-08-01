@@ -6,7 +6,14 @@ This is an insurance risk intelligence platform built as a full-stack web applic
 
 ## Recent Changes (August 1, 2025)
 
-### Tomorrow.io Weather Layer Integration (Latest - August 1, 2025)
+### UI/UX Organizational Improvements (Latest - August 1, 2025)
+- **Removed redundant header navigation** eliminating duplicate Dashboard, Data Sources, Risk Models, Portfolio Analysis, Reports links
+- **Replaced with strategic future features** in header: Global Search, AI Insights (Beta), Risk Alerts with notification badges
+- **Added utility controls** to header: Help, Settings, and improved notification center
+- **Improved information architecture** by removing duplicate navigation that added no value
+- **Enhanced future capability preview** showing planned platform features not yet covered in sidebar navigation
+
+### Tomorrow.io Weather Layer Integration 
 - **Implemented Tomorrow.io API integration** with new backend endpoint `/api/weather-layers/temperature` and `/api/weather-layers/wind`
 - **Created authentic weather data fetching** from Tomorrow.io API for real-time temperature and wind data across 8 geographic locations
 - **Replaced static OpenWeatherMap tiles** with dynamic GeoJSON-based weather overlays using Tomorrow.io data
