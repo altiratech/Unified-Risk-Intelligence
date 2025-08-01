@@ -76,6 +76,33 @@ export class WeatherService {
   }
 
   /**
+   * Store weather observation for a specific exposure
+   */
+  async storeObservation(
+    exposureId: string, 
+    latitude: number, 
+    longitude: number
+  ): Promise<void> {
+    try {
+      // Get the exposure to find organization
+      const exposure = await storage.getRiskExposures(''); // Will need to fix this
+      const organizationId = exposure.length > 0 ? exposure[0].organizationId : '';
+      
+      if (!organizationId) {
+        console.warn(`Cannot store weather observation - no organization found for exposure ${exposureId}`);
+        return;
+      }
+
+      await this.fetchAndStoreWeatherData(latitude, longitude, organizationId, exposureId);
+      console.log(`Weather observation stored for exposure ${exposureId}`);
+      
+    } catch (error) {
+      console.error(`Error storing weather observation for exposure ${exposureId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Fetch current weather from Tomorrow.io API
    */
   private async fetchCurrentWeather(latitude: number, longitude: number): Promise<WeatherData | null> {

@@ -12,6 +12,8 @@ import { riskAnalyticsEngine } from "./risk-analytics";
 import { dataProcessingEngine } from "./data-processing";
 import { csvProcessor } from "./csv-processor";
 import { weatherService } from "./weather-service";
+import { rawRowProcessor } from "./jobs/processRawRows";
+import cron from "node-cron";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health endpoint (must be first to avoid auth middleware)
@@ -25,6 +27,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth middleware
   await setupAuth(app);
+
+  // Background job scheduler (development mode only)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Setting up background job scheduler...');
+    // Process raw rows every 5 minutes
+    cron.schedule('*/5 * * * *', async () => {
+      console.log('Running scheduled raw row processing...');
+      try {
+        const job = await rawRowProcessor.processRawRows();
+        console.log(`Scheduled job completed: ${job.processedRows} rows processed`);
+      } catch (error) {
+        console.error('Scheduled job failed:', error);
+      }
+    });
+  }
 
   // File upload configuration
   const upload = multer({
@@ -390,6 +407,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to analyze data source",
         error: errorMessage 
       });
+    }
+  });
+
+  // Job management endpoints
+  app.post('/api/jobs/process-raw', isAuthenticated, async (req: any, res) => {
+    try {
+      console.log('Manual raw row processing triggered');
+      const { dataSourceId } = req.body;
+      
+      const job = await rawRowProcessor.processRawRows(dataSourceId);
+      
+      res.json({
+        success: true,
+        message: 'Raw row processing job initiated',
+        job: {
+          id: job.id,
+          status: job.status,
+          processedRows: job.processedRows,
+          totalRows: job.totalRows,
+          errors: job.errors
+        }
+      });
+    } catch (error) {
+      console.error('Error starting processing job:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({
+        success: false,
+        message: 'Failed to start processing job',
+        error: errorMessage
+      });
+    }
+  });
+
+  app.get('/api/jobs/:jobId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { jobId } = req.params;
+      const job = rawRowProcessor.getJob(jobId);
+      
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found' });
+      }
+      
+      res.json(job);
+    } catch (error) {
+      console.error('Error fetching job:', error);
+      res.status(500).json({ message: 'Failed to fetch job' });
     }
   });
 

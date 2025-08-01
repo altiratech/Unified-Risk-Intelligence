@@ -73,6 +73,9 @@ export interface IStorage {
   createRawDataBatch(dataSourceId: string, rows: any[]): Promise<RawData[]>;
   getRawData(dataSourceId: string): Promise<RawData[]>;
   deleteRawData(dataSourceId: string): Promise<void>;
+  
+  // Raw query operations
+  queryRaw(query: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -264,6 +267,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRawData(dataSourceId: string): Promise<void> {
     await db.delete(rawData).where(eq(rawData.dataSourceId, dataSourceId));
+  }
+
+  async queryRaw(query: string): Promise<any[]> {
+    const result = await db.execute(sql.raw(query));
+    return result.rows as any[];
   }
 }
 
