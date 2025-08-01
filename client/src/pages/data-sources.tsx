@@ -379,6 +379,7 @@ export default function DataSources() {
           </Card>
         </main>
       </div>
+      </div>
     </AuthWrapper>
   );
 }

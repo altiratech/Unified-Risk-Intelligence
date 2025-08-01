@@ -9,7 +9,7 @@ import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import DataSources from "@/pages/data-sources";
 import DataSourceDetail from "@/pages/data-source-detail";
-import GeospatialView from "@/pages/geospatial-view.tsx";
+import GeospatialView from "@/pages/geospatial-view";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
