@@ -681,7 +681,16 @@ export default function GeospatialView() {
   };
 
   const addWeatherDataToMap = () => {
-    if (!map.current || !weatherRiskData) return;
+    if (!map.current || !weatherRiskData) {
+      console.log('Cannot add weather data - map or data missing:', {
+        hasMap: !!map.current,
+        hasData: !!weatherRiskData,
+        dataFeatures: weatherRiskData?.features?.length || 0
+      });
+      return;
+    }
+
+    console.log('Adding weather data to map with', weatherRiskData.features.length, 'features');
 
     // Hide exposure circles when showing weather data
     if (map.current.getLayer('exposure-circles')) {
@@ -690,8 +699,10 @@ export default function GeospatialView() {
 
     // Add weather risk data as a source
     if (map.current.getSource('weather-risk')) {
+      console.log('Updating existing weather-risk source');
       map.current.getSource('weather-risk').setData(weatherRiskData);
     } else {
+      console.log('Adding new weather-risk source');
       map.current.addSource('weather-risk', {
         type: 'geojson',
         data: weatherRiskData
@@ -751,6 +762,8 @@ export default function GeospatialView() {
             .addTo(map.current);
         }
       });
+      
+      console.log('Weather circles layer added successfully');
     }
   };
 
