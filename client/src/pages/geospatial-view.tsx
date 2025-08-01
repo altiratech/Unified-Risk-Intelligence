@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthWrapper } from "@/components/layout/auth-wrapper";
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,24 +107,10 @@ export default function GeospatialView() {
   const [currentFrame, setCurrentFrame] = useState(0);
   const [animationSpeed, setAnimationSpeed] = useState(1000); // ms between frames
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "Please sign in to access geospatial data",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
-  // Fetch risk exposures from existing API
+  // Fetch risk exposures from existing API - disabled for preview mode
   const { data: exposures = [], isLoading: exposuresLoading } = useQuery<RiskExposure[]>({
     queryKey: ["/api/risk-exposures"],
+    enabled: false, // Disable for preview mode
     retry: false,
   });
 
@@ -858,12 +845,9 @@ export default function GeospatialView() {
     }).format(value);
   };
 
-  if (isLoading || !isAuthenticated) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <div className="flex h-screen bg-slate-50">
+    <AuthWrapper showLoginPrompt={false}>
+      <div className="flex h-screen bg-slate-50">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
@@ -1335,5 +1319,6 @@ export default function GeospatialView() {
         </main>
       </div>
     </div>
+    </AuthWrapper>
   );
 }
