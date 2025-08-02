@@ -11,7 +11,8 @@ import {
   Download, 
   FileText, 
   History,
-  LogOut
+  LogOut,
+  Bell
 } from "lucide-react";
 
 interface SidebarProps {
@@ -72,6 +73,18 @@ export function Sidebar({ className }: SidebarProps) {
             Risk Analysis
           </h3>
           <nav className="space-y-1">
+            <Link 
+              href="/alerts" 
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-lg",
+                location === "/alerts" 
+                  ? "text-primary bg-primary/10" 
+                  : "text-slate-700 hover:bg-slate-100"
+              )}
+            >
+              <Bell className={cn("mr-3 w-4 h-4", location === "/alerts" ? "text-primary" : "text-slate-400")} />
+              Alert Management
+            </Link>
             <Link 
               href="/geospatial" 
               className={cn(

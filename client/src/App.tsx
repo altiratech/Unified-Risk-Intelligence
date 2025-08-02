@@ -10,6 +10,7 @@ import Dashboard from "@/pages/dashboard";
 import DataSources from "@/pages/data-sources";
 import DataSourceDetail from "@/pages/data-source-detail";
 import GeospatialView from "@/pages/geospatial-view";
+import { AlertsPage } from "@/pages/AlertsPage";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/data-sources" component={DataSources} />
       <Route path="/data-sources/:id" component={DataSourceDetail} />
       <Route path="/geospatial" component={GeospatialView} />
+      <Route path="/alerts" component={AlertsPage} />
       <Route component={NotFound} />
     </Switch>
   );
