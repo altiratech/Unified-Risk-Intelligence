@@ -261,3 +261,76 @@ export const insertRawDataSchema = createInsertSchema(rawData).omit({
 });
 export type InsertRawData = z.infer<typeof insertRawDataSchema>;
 export type RawData = typeof rawData.$inferSelect;
+
+// Alert rules table
+export const alertRules = pgTable("alert_rules", {
+  id: varchar("id").primaryKey().$defaultFn(() => nanoid()),
+  organizationId: varchar("organization_id").notNull().references(() => organizations.id),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  conditions: jsonb("conditions").notNull(), // Threshold conditions and logic
+  isActive: boolean("is_active").default(true).notNull(),
+  notificationMethods: jsonb("notification_methods").notNull(), // Email, webhook configs
+  lastEvaluatedAt: timestamp("last_evaluated_at"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Alert instances table  
+export const alertInstances = pgTable("alert_instances", {
+  id: varchar("id").primaryKey().$defaultFn(() => nanoid()),
+  alertRuleId: varchar("alert_rule_id").notNull().references(() => alertRules.id),
+  organizationId: varchar("organization_id").notNull().references(() => organizations.id),
+  status: varchar("status").notNull(), // 'active', 'acknowledged', 'resolved'
+  triggerValue: varchar("trigger_value"),
+  threshold: varchar("threshold"),
+  triggerCondition: text("trigger_condition"),
+  acknowledgedBy: varchar("acknowledged_by").references(() => users.id),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  resolvedAt: timestamp("resolved_at"),
+  notificationsSent: jsonb("notifications_sent"), // Track delivery status
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User notification preferences
+export const userNotificationPreferences = pgTable("user_notification_preferences", {
+  id: varchar("id").primaryKey().$defaultFn(() => nanoid()),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  organizationId: varchar("organization_id").notNull().references(() => organizations.id),
+  emailEnabled: boolean("email_enabled").default(true).notNull(),
+  emailAddress: varchar("email_address"),
+  webhookEnabled: boolean("webhook_enabled").default(false).notNull(),
+  webhookUrl: varchar("webhook_url"),
+  alertFrequency: varchar("alert_frequency").default("immediate").notNull(), // 'immediate', 'hourly', 'daily'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Alert rule schemas
+export const insertAlertRuleSchema = createInsertSchema(alertRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertAlertRule = z.infer<typeof insertAlertRuleSchema>;
+export type AlertRule = typeof alertRules.$inferSelect;
+
+// Alert instance schemas
+export const insertAlertInstanceSchema = createInsertSchema(alertInstances).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertAlertInstance = z.infer<typeof insertAlertInstanceSchema>;
+export type AlertInstance = typeof alertInstances.$inferSelect;
+
+// User notification preference schemas
+export const insertUserNotificationPreferenceSchema = createInsertSchema(userNotificationPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertUserNotificationPreference = z.infer<typeof insertUserNotificationPreferenceSchema>;
+export type UserNotificationPreference = typeof userNotificationPreferences.$inferSelect;

@@ -13,6 +13,10 @@ import { dataProcessingEngine } from "./data-processing";
 import { csvProcessor } from "./csv-processor";
 import { weatherService } from "./weather-service";
 import { rawRowProcessor } from "./jobs/processRawRows";
+import { processAlerts } from "./jobs/processAlerts";
+import { alertService } from "./alert-service";
+import { insertAlertRuleSchema } from "@shared/schema";
+import { setupEmbedCORS, authenticateEmbedToken, createEmbedTokenEndpoint } from "./embed-auth";
 import cron from "node-cron";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -31,6 +35,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Background job scheduler (development mode only)
   if (process.env.NODE_ENV === 'development') {
     console.log('Setting up background job scheduler...');
+    
     // Process raw rows every 5 minutes
     cron.schedule('*/5 * * * *', async () => {
       console.log('Running scheduled raw row processing...');
@@ -39,6 +44,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Scheduled job completed: ${job.processedRows} rows processed`);
       } catch (error) {
         console.error('Scheduled job failed:', error);
+      }
+    });
+
+    // Process alerts every 2 minutes
+    cron.schedule('*/2 * * * *', async () => {
+      console.log('Running scheduled alert processing...');
+      try {
+        const result = await processAlerts();
+        if (result.totalTriggered > 0) {
+          console.log(`Alert processing completed: ${result.totalTriggered} alerts triggered`);
+        }
+      } catch (error) {
+        console.error('Alert processing failed:', error);
       }
     });
   }
@@ -453,6 +471,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching job:', error);
       res.status(500).json({ message: 'Failed to fetch job' });
+    }
+  });
+
+  // Manual alert processing job trigger
+  app.post('/api/jobs/process-alerts', isAuthenticated, async (req: any, res) => {
+    try {
+      const result = await processAlerts();
+      res.json({
+        success: true,
+        message: 'Alert processing completed',
+        result
+      });
+    } catch (error) {
+      console.error('Manual alert processing failed:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // ==================== ALERT MANAGEMENT ENDPOINTS ====================
+
+  // Get all alert rules for organization
+  app.get('/api/alert-rules', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+
+      const alertRules = await storage.getAlertRules(user.organizationId);
+      res.json(alertRules);
+    } catch (error) {
+      console.error('Error fetching alert rules:', error);
+      res.status(500).json({ message: 'Failed to fetch alert rules' });
+    }
+  });
+
+  // Create new alert rule
+  app.post('/api/alert-rules', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+
+      // Validate request body
+      const parseResult = insertAlertRuleSchema.safeParse({
+        ...req.body,
+        organizationId: user.organizationId,
+        createdBy: userId,
+      });
+
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          message: "Validation error",
+          errors: parseResult.error.errors 
+        });
+      }
+
+      const alertRule = await alertService.createAlertRule(
+        user.organizationId,
+        userId,
+        req.body
+      );
+
+      res.status(201).json(alertRule);
+    } catch (error) {
+      console.error('Error creating alert rule:', error);
+      res.status(500).json({ message: 'Failed to create alert rule' });
+    }
+  });
+
+  // Get specific alert rule
+  app.get('/api/alert-rules/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const alertRule = await storage.getAlertRule(id);
+      
+      if (!alertRule) {
+        return res.status(404).json({ message: 'Alert rule not found' });
+      }
+      
+      res.json(alertRule);
+    } catch (error) {
+      console.error('Error fetching alert rule:', error);
+      res.status(500).json({ message: 'Failed to fetch alert rule' });
+    }
+  });
+
+  // Update alert rule
+  app.put('/api/alert-rules/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const alertRule = await storage.updateAlertRule(id, updates);
+      res.json(alertRule);
+    } catch (error) {
+      console.error('Error updating alert rule:', error);
+      res.status(500).json({ message: 'Failed to update alert rule' });
+    }
+  });
+
+  // Delete alert rule
+  app.delete('/api/alert-rules/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteAlertRule(id);
+      res.json({ message: 'Alert rule deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting alert rule:', error);
+      res.status(500).json({ message: 'Failed to delete alert rule' });
+    }
+  });
+
+  // Get alert instances for organization
+  app.get('/api/alert-instances', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(400).json({ message: "User not associated with organization" });
+      }
+
+      const alertInstances = await storage.getAlertInstances(user.organizationId);
+      res.json(alertInstances);
+    } catch (error) {
+      console.error('Error fetching alert instances:', error);
+      res.status(500).json({ message: 'Failed to fetch alert instances' });
+    }
+  });
+
+  // Acknowledge alert instance
+  app.post('/api/alert-instances/:id/acknowledge', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      await storage.updateAlertInstanceStatus(id, 'acknowledged', userId);
+      res.json({ message: 'Alert acknowledged successfully' });
+    } catch (error) {
+      console.error('Error acknowledging alert:', error);
+      res.status(500).json({ message: 'Failed to acknowledge alert' });
+    }
+  });
+
+  // Resolve alert instance
+  app.post('/api/alert-instances/:id/resolve', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+      
+      await storage.updateAlertInstanceStatus(id, 'resolved', userId);
+      res.json({ message: 'Alert resolved successfully' });
+    } catch (error) {
+      console.error('Error resolving alert:', error);
+      res.status(500).json({ message: 'Failed to resolve alert' });
+    }
+  });
+
+  // ==================== EMBED AUTHENTICATION ENDPOINTS ====================
+
+  // Generate embed token (for admin users)
+  app.post('/api/embed/generate-token', isAuthenticated, createEmbedTokenEndpoint());
+
+  // Test embed endpoint with CORS support
+  app.get('/api/embed/test', setupEmbedCORS(), authenticateEmbedToken, async (req: any, res) => {
+    try {
+      const embedAuth = req.embedAuth;
+      
+      res.json({
+        success: true,
+        message: 'Embed authentication successful',
+        organization: embedAuth.organizationId,
+        permissions: embedAuth.permissions,
+        widgetId: embedAuth.widgetId,
+        allowedOrigins: embedAuth.allowedOrigins,
+      });
+    } catch (error) {
+      console.error('Error in embed test endpoint:', error);
+      res.status(500).json({ message: 'Failed to process embed request' });
     }
   });
 

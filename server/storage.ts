@@ -7,6 +7,9 @@ import {
   exportJobs,
   weatherObservations,
   rawData,
+  alertRules,
+  alertInstances,
+  userNotificationPreferences,
   type User,
   type UpsertUser,
   type Organization,
@@ -23,6 +26,12 @@ import {
   type InsertWeatherObservation,
   type RawData,
   type InsertRawData,
+  type AlertRule,
+  type InsertAlertRule,
+  type AlertInstance,
+  type InsertAlertInstance,
+  type UserNotificationPreference,
+  type InsertUserNotificationPreference,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -73,6 +82,25 @@ export interface IStorage {
   createRawDataBatch(dataSourceId: string, rows: any[]): Promise<RawData[]>;
   getRawData(dataSourceId: string): Promise<RawData[]>;
   deleteRawData(dataSourceId: string): Promise<void>;
+  
+  // Alert operations
+  getAlertRules(organizationId: string): Promise<AlertRule[]>;
+  getAlertRule(id: string): Promise<AlertRule | undefined>;
+  createAlertRule(rule: InsertAlertRule): Promise<AlertRule>;
+  updateAlertRule(id: string, updates: Partial<InsertAlertRule>): Promise<AlertRule>;
+  updateAlertRuleEvaluation(id: string): Promise<void>;
+  deleteAlertRule(id: string): Promise<void>;
+  
+  // Alert instance operations
+  getAlertInstances(organizationId: string): Promise<AlertInstance[]>;
+  getActiveAlertInstance(alertRuleId: string): Promise<AlertInstance | undefined>;
+  createAlertInstance(instance: InsertAlertInstance): Promise<AlertInstance>;
+  updateAlertInstanceStatus(id: string, status: string, acknowledgedBy?: string): Promise<void>;
+  updateAlertInstanceNotifications(id: string, notifications: any[]): Promise<void>;
+  
+  // User notification preferences
+  getUserNotificationPreferences(userId: string, organizationId: string): Promise<UserNotificationPreference | undefined>;
+  upsertUserNotificationPreferences(preferences: InsertUserNotificationPreference): Promise<UserNotificationPreference>;
   
   // Raw query operations
   queryRaw(query: string): Promise<any[]>;
@@ -272,6 +300,109 @@ export class DatabaseStorage implements IStorage {
   async queryRaw(query: string): Promise<any[]> {
     const result = await db.execute(sql.raw(query));
     return result.rows as any[];
+  }
+
+  // Alert operations
+  async getAlertRules(organizationId: string): Promise<AlertRule[]> {
+    return db.select().from(alertRules)
+      .where(eq(alertRules.organizationId, organizationId))
+      .orderBy(desc(alertRules.createdAt));
+  }
+
+  async getAlertRule(id: string): Promise<AlertRule | undefined> {
+    const [result] = await db.select().from(alertRules).where(eq(alertRules.id, id));
+    return result;
+  }
+
+  async createAlertRule(rule: InsertAlertRule): Promise<AlertRule> {
+    const [result] = await db.insert(alertRules).values(rule).returning();
+    return result;
+  }
+
+  async updateAlertRule(id: string, updates: Partial<InsertAlertRule>): Promise<AlertRule> {
+    const [result] = await db.update(alertRules)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(alertRules.id, id))
+      .returning();
+    return result;
+  }
+
+  async updateAlertRuleEvaluation(id: string): Promise<void> {
+    await db.update(alertRules)
+      .set({ lastEvaluatedAt: new Date() })
+      .where(eq(alertRules.id, id));
+  }
+
+  async deleteAlertRule(id: string): Promise<void> {
+    await db.delete(alertRules).where(eq(alertRules.id, id));
+  }
+
+  // Alert instance operations
+  async getAlertInstances(organizationId: string): Promise<AlertInstance[]> {
+    return db.select().from(alertInstances)
+      .where(eq(alertInstances.organizationId, organizationId))
+      .orderBy(desc(alertInstances.createdAt));
+  }
+
+  async getActiveAlertInstance(alertRuleId: string): Promise<AlertInstance | undefined> {
+    const [result] = await db.select().from(alertInstances)
+      .where(and(
+        eq(alertInstances.alertRuleId, alertRuleId),
+        eq(alertInstances.status, 'active')
+      ));
+    return result;
+  }
+
+  async createAlertInstance(instance: InsertAlertInstance): Promise<AlertInstance> {
+    const [result] = await db.insert(alertInstances).values(instance).returning();
+    return result;
+  }
+
+  async updateAlertInstanceStatus(id: string, status: string, acknowledgedBy?: string): Promise<void> {
+    const updates: any = { status, updatedAt: new Date() };
+    if (acknowledgedBy) {
+      updates.acknowledgedBy = acknowledgedBy;
+      updates.acknowledgedAt = new Date();
+    }
+    if (status === 'resolved') {
+      updates.resolvedAt = new Date();
+    }
+    
+    await db.update(alertInstances)
+      .set(updates)
+      .where(eq(alertInstances.id, id));
+  }
+
+  async updateAlertInstanceNotifications(id: string, notifications: any[]): Promise<void> {
+    await db.update(alertInstances)
+      .set({ notificationsSent: notifications })
+      .where(eq(alertInstances.id, id));
+  }
+
+  // User notification preferences
+  async getUserNotificationPreferences(userId: string, organizationId: string): Promise<UserNotificationPreference | undefined> {
+    const [result] = await db.select().from(userNotificationPreferences)
+      .where(and(
+        eq(userNotificationPreferences.userId, userId),
+        eq(userNotificationPreferences.organizationId, organizationId)
+      ));
+    return result;
+  }
+
+  async upsertUserNotificationPreferences(preferences: InsertUserNotificationPreference): Promise<UserNotificationPreference> {
+    // Check if preferences exist
+    const existing = await this.getUserNotificationPreferences(preferences.userId!, preferences.organizationId!);
+    
+    if (existing) {
+      const [result] = await db.update(userNotificationPreferences)
+        .set({ ...preferences, updatedAt: new Date() })
+        .where(eq(userNotificationPreferences.id, existing.id))
+        .returning();
+      return result;
+    } else {
+      const [result] = await db.insert(userNotificationPreferences).values(preferences).returning();
+      return result;
+    }
   }
 }
 
