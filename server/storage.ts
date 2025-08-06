@@ -197,13 +197,6 @@ export class DatabaseStorage implements IStorage {
       .set({ status, filePath, updatedAt: new Date() })
       .where(eq(exportJobs.id, id));
   }
-
-  async updateDataSourceStatus(id: string, status: string): Promise<void> {
-    await db
-      .update(dataSources)
-      .set({ status, updatedAt: new Date() })
-      .where(eq(dataSources.id, id));
-  }
 }
 
 export const storage = new DatabaseStorage();
