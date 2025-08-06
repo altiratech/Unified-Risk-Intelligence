@@ -339,7 +339,7 @@ function AlertsPageContent() {
 
 export default function AlertsPage() {
   return (
-    <AuthWrapper>
+    <AuthWrapper showLoginPrompt={false}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
         <div className="flex">
