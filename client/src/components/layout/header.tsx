@@ -16,7 +16,7 @@ export function Header() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Shield className="text-white w-4 h-4" />
               </div>
-              <h1 className="text-xl font-semibold text-slate-900">ALTIRA TECHNOLOGIES</h1>
+              <h1 className="text-xl font-semibold text-slate-900">Unified Risk Intelligence</h1>
             </div>
             {/* Strategic Features - Future Platform Capabilities */}
             <div className="hidden lg:flex items-center space-x-6">

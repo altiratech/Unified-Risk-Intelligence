@@ -14,7 +14,7 @@ export default function Landing() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Shield className="text-white text-sm" />
               </div>
-              <h1 className="text-xl text-slate-900 font-semibold">ALTIRA TECHNOLOGIES</h1>
+              <h1 className="text-xl text-slate-900 font-semibold">Unified Risk Intelligence</h1>
             </div>
             <Link href="/dashboard">
               <Button>
