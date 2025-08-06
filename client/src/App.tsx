@@ -10,7 +10,7 @@ import Dashboard from "@/pages/dashboard";
 import DataSources from "@/pages/data-sources";
 import DataSourceDetail from "@/pages/data-source-detail";
 import GeospatialView from "@/pages/geospatial-view";
-import { AlertsPage } from "@/pages/AlertsPage";
+import AlertsPage from "@/pages/AlertsPage";
 
 function Router() {
   return (

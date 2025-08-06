@@ -88,7 +88,7 @@ const AGGREGATION_OPTIONS = [
 ];
 
 const GROUP_BY_OPTIONS = [
-  { value: '', label: 'No grouping' },
+  { value: 'none', label: 'No grouping' },
   { value: 'perilType', label: 'Peril Type' },
   { value: 'state', label: 'State' },
   { value: 'riskLevel', label: 'Risk Level' },
@@ -116,7 +116,7 @@ export function AlertRuleForm({ rule, onClose, onSuccess }: AlertRuleFormProps) 
         operator: 'gt',
         value: 0,
         aggregation: 'sum',
-        groupBy: '',
+        groupBy: 'none',
       }],
       notificationMethods: [{
         type: 'email',

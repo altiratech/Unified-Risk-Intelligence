@@ -53,7 +53,7 @@ export class AlertService {
     };
 
     if (smtpConfig.host && smtpConfig.auth.user && smtpConfig.auth.pass) {
-      this.emailTransporter = nodemailer.createTransporter(smtpConfig);
+      this.emailTransporter = nodemailer.createTransport(smtpConfig);
       console.log('Email transporter initialized');
     } else {
       console.warn('SMTP configuration incomplete - email notifications disabled');

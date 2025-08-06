@@ -9,6 +9,9 @@ import { AlertRuleForm } from '@/components/alert-rule-form';
 import { AlertInstancesList } from '@/components/alert-instances-list';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { AuthWrapper } from "@/components/layout/auth-wrapper";
+import { Header } from "@/components/layout/header";
+import { Sidebar } from "@/components/layout/sidebar";
 
 interface AlertRule {
   id: string;
@@ -41,7 +44,7 @@ interface AlertInstance {
   message: string;
 }
 
-export function AlertsPage() {
+function AlertsPageContent() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingRule, setEditingRule] = useState<AlertRule | null>(null);
   const { toast } = useToast();
@@ -312,7 +315,7 @@ export function AlertsPage() {
 
         <TabsContent value="instances">
           <AlertInstancesList 
-            instances={alertInstances} 
+            instances={alertInstances as AlertInstance[]} 
             isLoading={instancesLoading}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['/api/alert-instances'] })}
           />
@@ -331,5 +334,21 @@ export function AlertsPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function AlertsPage() {
+  return (
+    <AuthWrapper>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Header />
+        <div className="flex">
+          <Sidebar />
+          <main className="flex-1">
+            <AlertsPageContent />
+          </main>
+        </div>
+      </div>
+    </AuthWrapper>
   );
 }
